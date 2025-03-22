@@ -1,0 +1,71 @@
+# Generated from CLion C/C++ Code Style settings
+---
+Language: Cpp
+BasedOnStyle: LLVM
+ColumnLimit: 120
+IndentWidth: 4
+TabWidth: 4
+AccessModifierOffset: -4
+UseTab: Never
+ContinuationIndentWidth: 4
+
+ConstructorInitializerIndentWidth: 4  # Indent initializer list with 4 spaces
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: Never
+PenaltyBreakTemplateDeclaration: 0
+
+AllowShortBlocksOnASingleLine: Always
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: All
+AllowShortEnumsOnASingleLine: true
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveDeclarations: Consecutive
+AlignOperands: true
+AlignTrailingComments: false
+BinPackArguments: true
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeWhile: true
+  AfterCaseLabel: true
+  AfterExternBlock: true
+  BeforeLambdaBody: true
+  SplitEmptyFunction: false
+  SplitEmptyNamespace: false
+  SplitEmptyRecord: false
+  IndentBraces: false
+IncludeCategories:
+  - Regex: "^<.*"
+    Priority: 1
+  - Regex: '^".*'
+    Priority: 2
+  - Regex: ".*"
+    Priority: 3
+IncludeIsMainRegex: "([-_](test|unittest))?$"
+IndentCaseBlocks: true
+IndentCaseLabels: true
+InsertNewlineAtEOF: true
+MacroBlockBegin: ""
+MacroBlockEnd: ""
+MaxEmptyLinesToKeep: 2
+NamespaceIndentation: All
+SpaceAfterTemplateKeyword: false
+SpaceBeforeParens: Never
+SpaceBeforeRangeBasedForLoopColon: false
+SpaceInEmptyParentheses: false
+SpacesInAngles: false
+SpacesInConditionalStatement: false
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+BreakTemplateDeclarations: Yes
