@@ -1,11 +1,8 @@
 #include <algorithm>
 #include <cstddef>
-#include <iterator>
 #include <limits>
 #include <span>
-#include <type_traits>
 #include <vector>
-#include "spdlog/spdlog.h"
 
 #include <fmt/core.h>
 #include <fmt/format.h>

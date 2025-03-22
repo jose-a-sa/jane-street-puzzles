@@ -6,11 +6,9 @@
 #include <tuple>
 #include <vector>
 
-#include <fmt/color.h>
 #include <fmt/core.h>
 
 #include <spdlog/spdlog.h>
-
 
 #include "integer_factorizations.h"
 

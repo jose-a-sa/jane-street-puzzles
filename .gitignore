@@ -1,4 +1,4 @@
-qs/experimental
+*.log
 
 .idea
 .vscode
