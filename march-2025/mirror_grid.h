@@ -51,22 +51,13 @@ auto format_as(direction d)
 class mirror_grid
 {
 public:
-    using num_type = int64_t;
-
-    struct result
-    {
-        num_type left;
-        num_type top;
-        num_type right;
-        num_type bottom;
-        num_type product;
-    };
+    using num_type = uint64_t;
 
     mirror_grid(size_t n)
         : nums_(4 * n, 0),
           mask_(n * n, false),
           mirrors_(n * n, MirrorNone),
-          size_{n}
+          len_{n}
     {}
 
     mirror_grid(std::span<num_type const> left, std::span<num_type const> top, std::span<num_type const> right,
@@ -77,7 +68,7 @@ public:
         for(auto&& s: {left, top, right, bottom})
             it = std::copy(s.begin(), s.end(), it);
 
-        std::transform(nums_.begin(), nums_.end(), mask_.begin(), [](auto const& x) { return x > 0; });
+        std::transform(nums_.begin(), nums_.end(), mask_.begin(), [](auto const& x) { return x == 0; });
     }
 
     mirror_grid(std::initializer_list<num_type> left, std::initializer_list<num_type> top,
@@ -91,31 +82,30 @@ public:
         std::transform(nums_.begin(), nums_.end(), mask_.begin(), [](auto const& x) { return x == 0; });
     }
 
-    constexpr auto length() const noexcept { return size_; }
+    constexpr auto length() const noexcept { return len_; }
 
-    INLINE constexpr auto& operator()(int const row, int const col) noexcept { return mirrors_[row * size_ + col]; }
-
+    INLINE constexpr auto& operator()(int const row, int const col) noexcept { return mirrors_[row * len_ + col]; }
     INLINE constexpr auto& operator()(int const row, int const col) const noexcept
     {
-        return mirrors_[row * size_ + col];
+        return mirrors_[row * len_ + col];
     }
+
+    INLINE constexpr auto& num(direction const d, int const i) noexcept { return nums_[d * len_ + i]; }
+    INLINE constexpr auto& num(direction const d, int const i) const noexcept { return nums_[d * len_ + i]; }
 
     INLINE constexpr mirror_type mirror(int const row, int const col) const noexcept
     {
         return static_cast<mirror_type>(1 * (operator()(row, col) > 0) + 2 * (operator()(row, col) < 0));
     }
 
-    INLINE constexpr auto& num(direction const d, int const i) noexcept { return nums_[d * size_ + i]; }
-    INLINE constexpr auto& num(direction const d, int const i) const noexcept { return nums_[d * size_ + i]; }
-
     INLINE constexpr auto in_bounds(int const row, int const col) const noexcept
     {
-        return row >= 0 && row < size_ && col >= 0 && col < size_;
+        return row >= 0 && row < len_ && col >= 0 && col < len_;
     }
     INLINE constexpr auto in_border(int const row, int const col, int const offset = 0) const noexcept
     {
-        return ((row == offset - 1 || row == size_ - offset) && (offset - 1 <= col) && (col <= size_ - offset)) ||
-               ((col == offset - 1 || col == size_ - offset) && (offset - 1 <= row) && (row <= size_ - offset));
+        return ((row == offset - 1 || row == len_ - offset) && (offset - 1 <= col) && (col <= len_ - offset)) ||
+               ((col == offset - 1 || col == len_ - offset) && (offset - 1 <= row) && (row <= len_ - offset));
     }
 
     INLINE constexpr auto can_place_mirror(int const row, int const col) const noexcept
@@ -124,9 +114,9 @@ public:
             return false;
         if(col > 0 && operator()(row, col - 1) != 0)
             return false;
-        if(row < size_ - 1 && operator()(row + 1, col) != 0)
+        if(row < len_ - 1 && operator()(row + 1, col) != 0)
             return false;
-        if(col < size_ - 1 && operator()(row, col + 1) != 0)
+        if(col < len_ - 1 && operator()(row, col + 1) != 0)
             return false;
 
         return true;
@@ -138,22 +128,31 @@ public:
         return mirror(row, col) == MirrorNone && can_place_mirror(row, col);
     }
 
-    INLINE constexpr auto add_mirror(int const row, int const col, mirror_type const m) noexcept
+    INLINE constexpr auto add_mirror_counter(int const row, int const col, mirror_type const m) noexcept
     {
         return operator()(row, col) += (m == MirrorLR) - (m == MirrorRL);
     }
-    INLINE constexpr auto remove_mirror(int const row, int const col, mirror_type const m) noexcept
+    INLINE constexpr auto remove_mirror_counter(int const row, int const col, mirror_type const m) noexcept
     {
         return operator()(row, col) -= (m == MirrorLR) - (m == MirrorRL);
     }
 
-    constexpr auto get_missing_sums() const -> result
+    struct result
+    {
+        num_type left;
+        num_type top;
+        num_type right;
+        num_type bottom;
+        num_type product;
+    };
+
+    constexpr result get_result() const noexcept
     {
         auto compute_clue_sum = [&](direction d)
         {
             num_type sum = 0;
-            for(int i = 0; i < size_; ++i)
-                sum += num(d, i) * mask_[d * size_ + i];
+            for(int i = 0; i < len_; ++i)
+                sum += num(d, i) * mask_[d * len_ + i];
             return sum;
         };
         auto const left_sum   = compute_clue_sum(Left);
@@ -170,8 +169,8 @@ private:
 
     std::vector<num_type> nums_;
     std::vector<bool>     mask_;
-    std::vector<num_type> mirrors_;
-    size_t                size_;
+    std::vector<int>      mirrors_;
+    size_t                len_;
 
     INLINE static size_t validate_sizes(size_t const l, size_t const t, size_t const r, size_t const b)
     {
@@ -283,10 +282,10 @@ public:
           factorizations_{}
     {}
 
-    void solve()
+    bool solve()
     {
         init_();
-        try_next_number(0);
+        return try_next_number_(0);
     }
 
 private:
@@ -294,7 +293,6 @@ private:
     std::vector<std::tuple<integer_factorizations<num_type>, size_t>> factorizations_{};
 
     // CONSTANTS
-
     static constexpr auto dir_vec = std::array<std::array<int, 2>, 5>{{{0, -1}, {-1, 0}, {0, 1}, {1, 0}, {0, 0}}};
     static constexpr auto reverse_dir_map = std::array<direction, 5>{{Right, Bottom, Left, Top, InvalidDir}};
     static constexpr auto mirror_dir_map =
@@ -332,28 +330,23 @@ private:
             if(x > 0)
                 factorizations_.emplace_back(integer_factorizations<num_type>(x, len), i);
         }
-        std::sort(factorizations_.begin(), factorizations_.end(),
-                  [&](auto const& a, auto const& b)
-                  {
-                      auto n1 = grid_.nums_[std::get<1>(a)];
-                      auto n2 = grid_.nums_[std::get<1>(b)];
-                      return n1 < n2;
-                  });
+
+        std::sort(factorizations_.begin(), factorizations_.end(), [&](auto const& a, auto const& b)
+                  { return grid_.nums_[std::get<1>(a)] < grid_.nums_[std::get<1>(b)]; });
 
         spdlog::debug("Number order: {}",
                       factorizations_ | std::views::transform([&](auto& t) { return grid_.nums_[std::get<1>(t)]; }));
     }
 
-
-    constexpr bool try_next_number(size_t const number_idx)
+    constexpr bool try_next_number_(size_t const number_idx)
     {
         if(number_idx == factorizations_.size())
         {
-            spdlog::debug("Completed provided numbers. Trying to complete grid: {}", grid_);
-            return try_complete_grid();
+            spdlog::debug("Completed iterating input numbers. Trying to complete grid: \n{}", grid_);
+            return try_complete_grid_();
         }
 
-        spdlog::debug("Grid state: {}", grid_);
+        spdlog::debug("STATE: \n{}", grid_);
         spdlog::debug("Trying number_idx={} out of {} numbers", number_idx, factorizations_.size());
 
         auto& [factorizations, i] = factorizations_[number_idx];
@@ -374,174 +367,17 @@ private:
             auto       factors       = *it;
             auto const total_factors = factors.total_factors();
 
-            spdlog::debug("Trying factorization {} with total_factors={}, starting at ({},{}), dir={}", factors,
-                          total_factors, start_pos.row, start_pos.col, start_pos.dir);
+            spdlog::debug("Trying factorization {} of num={} (total_factors={}). Starting at ({},{}), dir={}", factors,
+                          num, total_factors, placement, loc, start_pos.row, start_pos.col, start_pos.dir);
 
-            if(try_next_factor(number_idx, factors, 0, total_factors, start_pos))
+            if(try_next_factor_(number_idx, factors, 0, total_factors, start_pos))
                 return true;
         }
 
         return false;
     }
 
-    constexpr bool is_path_valid(grid_position const& pos, grid_position const& new_pos) const noexcept
-    {
-        auto const dist = std::abs(new_pos.row - pos.row) + std::abs(new_pos.col - pos.col);
-
-        int row = pos.row, col = pos.col;
-        for(int k = 0; k < dist - 1; ++k)
-        {
-            row += dir_vec[new_pos.dir][0], col += dir_vec[new_pos.dir][1];
-            if(grid_(row, col) != 0 && grid_.in_bounds(row, col))
-                return false;
-        }
-        row += dir_vec[new_pos.dir][0], col += dir_vec[new_pos.dir][1];
-        return new_pos.col == col && new_pos.row == row;
-    };
-
-    constexpr bool try_next_factor(size_t const number_idx, factors_view<num_type>& factors, size_t const factor_idx,
-                                   size_t const total_factors, grid_position const& pos)
-    {
-        if(factor_idx == total_factors)
-            return try_complete_factors(number_idx, pos);
-
-        // checks end of path is valid, checking last number can be placed on border
-        auto is_pos_valid = [&](grid_position const& pos)
-        {
-            if(factor_idx + 1 < total_factors)
-                return grid_.in_bounds(pos.row, pos.col);
-            else
-                return grid_.in_border(pos.row, pos.col, 0) || grid_.in_border(pos.row, pos.col, 1);
-        };
-
-        // try to place mirror and continue pat
-        for(auto&& f: factors)
-        {
-            if(f.count == 0)
-                continue;
-
-            int const dist = f.base;
-            --f.count;
-
-            auto const new_pos_lr = pos.next(MirrorLR, dist);
-            if(is_pos_valid(new_pos_lr) && grid_.can_place_mirror(pos.row, pos.col, MirrorLR) &&
-               is_path_valid(pos, new_pos_lr))
-            {
-                spdlog::debug("Trying placing factor {} of {} and mirror={}, from ({},{}) to ({},{}) with dir={}",
-                              f.base, factors, MirrorLR, pos.row, pos.col, new_pos_lr.row, new_pos_lr.col,
-                              new_pos_lr.dir);
-
-                grid_.add_mirror(pos.row, pos.col, MirrorLR);
-
-                if(try_next_factor(number_idx, factors, factor_idx + 1, total_factors, new_pos_lr))
-                    return true;
-
-                grid_.remove_mirror(pos.row, pos.col, MirrorLR);
-            }
-
-            auto const new_pos_rl = pos.next(MirrorRL, dist);
-            if(is_pos_valid(new_pos_rl) && grid_.can_place_mirror(pos.row, pos.col, MirrorRL) &&
-               is_path_valid(pos, new_pos_rl))
-            {
-                spdlog::debug("Trying placing factor {} of {} and mirror={}, from ({},{}) to ({},{}) with dir={}",
-                              f.base, factors, MirrorRL, pos.row, pos.col, new_pos_rl.row, new_pos_rl.col,
-                              new_pos_rl.dir);
-
-                grid_.add_mirror(pos.row, pos.col, MirrorRL);
-
-                if(try_next_factor(number_idx, factors, factor_idx + 1, total_factors, new_pos_rl))
-                    return true;
-
-                grid_.remove_mirror(pos.row, pos.col, MirrorRL);
-            }
-
-            auto const new_pos_none = pos.next(MirrorNone, dist - 1);
-            if(factor_idx == 0 && is_pos_valid(new_pos_none) && is_path_valid(pos, new_pos_none))
-            {
-                spdlog::debug(
-                    "Trying factor {} of {} not placing mirror (factor_idx == 0), from ({},{}) to ({},{}) with dir={}",
-                    f.base, factors, pos.row, pos.col, new_pos_none.row, new_pos_none.col, new_pos_none.dir);
-
-                if(try_next_factor(number_idx, factors, factor_idx + 1, total_factors, new_pos_none))
-                    return true;
-            }
-
-            ++f.count;
-        };
-
-        return false;
-    }
-
-    constexpr bool try_complete_factors(size_t const number_idx, grid_position const& pos)
-    {
-        int const len      = grid_.length();
-        auto const& [_, i] = factorizations_[number_idx];
-        auto const num     = grid_.nums_[i];
-
-        // If pos is at the border
-        if(grid_.in_border(pos.row, pos.col, 0))
-        {
-            auto const placement =
-                static_cast<direction>(1 * (pos.row == -1) + 2 * (pos.col == len) + 3 * (pos.row == len));
-            auto const loc = (placement % 2 == 0) ? pos.row : pos.col;
-
-            if(grid_.num(placement, loc) != 0 && grid_.num(placement, loc) != num)
-            {
-                spdlog::debug("Invalid path as it reached {}[{}] = {} != 0,{}", placement, loc,
-                              grid_.num(placement, loc), num);
-                return false;
-            }
-
-            auto const num_temp       = grid_.num(placement, loc);
-            grid_.num(placement, loc) = num;
-
-            spdlog::debug("Path reached border and setting {}[{}] = {}", placement, loc, grid_.num(placement, loc));
-
-            if(try_next_number(number_idx + 1))
-                return true;
-
-            grid_.num(placement, loc) = num_temp;
-        }
-        else // grid_.in_border(pos.row, pos.col, 1) == true
-        {
-            auto const placement =
-                static_cast<direction>(1 * (pos.row == 0) + 2 * (pos.col == len - 1) + 3 * (pos.row == len - 1));
-            auto const loc = (placement % 2 == 0) ? pos.row : pos.col;
-
-            auto const m = mirror_border_placement[placement][pos.dir];
-            if(m == MirrorNone)
-            {
-                spdlog::debug("Invalid adjacent path reached border {}[{}] at perpendicular dir={}", placement, loc,
-                              pos.dir);
-                return false;
-            }
-
-            if((grid_.num(placement, loc) != 0 && grid_.num(placement, loc) != num) ||
-               !grid_.can_place_mirror(pos.row, pos.col, m))
-            {
-                spdlog::debug("Invalid adjacent path reached border at {}[{}] = {} != 0,{}", placement, loc,
-                              grid_.num(placement, loc), num);
-                return false;
-            }
-
-            auto const num_temp       = grid_.num(placement, loc);
-            grid_.num(placement, loc) = num;
-            grid_.add_mirror(pos.row, pos.col, m);
-
-            spdlog::debug("Addding final mirror={} at ({},{}). Path reached border and setting {}[{}] = {}", m, pos.row,
-                          pos.col, placement, loc, num);
-
-            if(try_next_number(number_idx + 1))
-                return true;
-
-            grid_.remove_mirror(pos.row, pos.col, m);
-            grid_.num(placement, loc) = num_temp;
-        }
-
-        return false;
-    }
-
-    constexpr bool try_complete_grid()
+    constexpr bool try_complete_grid_()
     {
         restorer tx(grid_.nums_);
 
@@ -572,23 +408,176 @@ private:
             }
             while(grid_.in_bounds(row, col));
 
-            num_from_path *= segment_len == 0 ? 1 : segment_len;
+            num_from_path *= (segment_len == 0) ? 1 : segment_len;
 
-            if(grid_.num(placement, loc) != 0 && grid_.num(placement, loc) != num_from_path)
+            bool const is_valid_path = grid_.num(placement, loc) == 0 || grid_.num(placement, loc) == num_from_path;
+            if(!is_valid_path)
             {
                 spdlog::debug("Path from {}[{}], resulted in number={} but expected {}, arriving at ({},{}), dir={}",
-                              placement, loc, grid_.num(placement, loc), num_from_path, grid_.num(placement, loc), row,
-                              col, dir);
+                              placement, loc, num_from_path, grid_.num(placement, loc), row, col, dir);
                 tx.restore();
                 return false;
             }
 
-            spdlog::debug("Path from {}[{}] = {}, arrived at ({},{}), dir={}, setting to number={}", placement, loc,
-                          grid_.num(placement, loc), num_from_path, row, col, dir);
+            // auto const end_placement = static_cast<direction>(1 * (row == -1) + 2 * (col == len) + 3 * (row == len));
+            // auto const end_loc       = (end_placement % 2 == 0) ? row : col;
+
+            spdlog::debug("Path from {}[{}]={} arrived at pos=({},{}), dir={}. Setting to value {}.",
+                          placement, loc, grid_.num(placement, loc), row, col, dir, num_from_path);
             grid_.num(placement, loc) = num_from_path;
         }
 
-        spdlog::debug("COMPLETED GRID: {}", grid_);
+        spdlog::debug("COMPLETED GRID: \n{}", grid_);
         return true;
     };
+
+    constexpr bool is_path_valid_(grid_position const& pos, grid_position const& new_pos) const noexcept
+    {
+        auto const dist = std::abs(new_pos.row - pos.row) + std::abs(new_pos.col - pos.col);
+
+        int row = pos.row, col = pos.col;
+        for(int k = 0; k < dist - 1; ++k)
+        {
+            row += dir_vec[new_pos.dir][0], col += dir_vec[new_pos.dir][1];
+            if(grid_.mirror(row, col) != MirrorNone && grid_.in_bounds(row, col))
+                return false;
+        }
+        row += dir_vec[new_pos.dir][0], col += dir_vec[new_pos.dir][1];
+        return new_pos.col == col && new_pos.row == row;
+    };
+
+    constexpr bool try_next_factor_(size_t const number_idx, factors_view<num_type>& factors, size_t const factor_idx,
+                                    size_t const total_factors, grid_position const& pos)
+    {
+        if(factor_idx == total_factors)
+            return try_complete_factors_(number_idx, pos);
+
+        // checks end of path is valid, checking last number can be placed on border
+        auto is_pos_valid = [&](grid_position const& pos)
+        {
+            if(factor_idx + 1 < total_factors)
+                return grid_.in_bounds(pos.row, pos.col);
+            else
+                return grid_.in_border(pos.row, pos.col, 0) || grid_.in_border(pos.row, pos.col, 1);
+        };
+
+        // try to place mirror and continue pat
+        for(auto&& f: factors)
+        {
+            if(f.count == 0)
+                continue;
+
+            int const dist = f.base;
+            --f.count;
+
+            auto const new_pos_lr = pos.next(MirrorLR, dist);
+            if(is_pos_valid(new_pos_lr) && grid_.can_place_mirror(pos.row, pos.col, MirrorLR) &&
+               is_path_valid_(pos, new_pos_lr))
+            {
+                spdlog::debug("Trying factor {} of {} and mirror={}, from ({},{}) to ({},{}), with dir={}", f.base,
+                              factors, MirrorLR, pos.row, pos.col, new_pos_lr.row, new_pos_lr.col, new_pos_lr.dir);
+
+                grid_.add_mirror_counter(pos.row, pos.col, MirrorLR);
+                if(try_next_factor_(number_idx, factors, factor_idx + 1, total_factors, new_pos_lr))
+                    return true;
+                grid_.remove_mirror_counter(pos.row, pos.col, MirrorLR);
+            }
+
+            auto const new_pos_rl = pos.next(MirrorRL, dist);
+            if(is_pos_valid(new_pos_rl) && grid_.can_place_mirror(pos.row, pos.col, MirrorRL) &&
+               is_path_valid_(pos, new_pos_rl))
+            {
+                spdlog::debug("Trying factor {} of {} and mirror={}, from ({},{}) to ({},{}), with dir={}", f.base,
+                              factors, MirrorRL, pos.row, pos.col, new_pos_rl.row, new_pos_rl.col, new_pos_rl.dir);
+
+                grid_.add_mirror_counter(pos.row, pos.col, MirrorRL);
+                if(try_next_factor_(number_idx, factors, factor_idx + 1, total_factors, new_pos_rl))
+                    return true;
+                grid_.remove_mirror_counter(pos.row, pos.col, MirrorRL);
+            }
+
+            auto const new_pos_none = pos.next(MirrorNone, dist - 1);
+            if(factor_idx == 0 && is_pos_valid(new_pos_none) && is_path_valid_(pos, new_pos_none))
+            {
+                spdlog::debug(
+                    "Trying factor {} of {} and no mirror (factor_idx==0), from ({},{}) to ({},{}) with dir={}", f.base,
+                    factors, pos.row, pos.col, new_pos_none.row, new_pos_none.col, new_pos_none.dir);
+
+                if(try_next_factor_(number_idx, factors, factor_idx + 1, total_factors, new_pos_none))
+                    return true;
+            }
+
+            ++f.count;
+        };
+
+        return false;
+    }
+
+    constexpr bool try_complete_factors_(size_t const number_idx, grid_position const& pos)
+    {
+        int const len      = grid_.length();
+        auto const& [_, i] = factorizations_[number_idx];
+        auto const num     = grid_.nums_[i];
+
+        // If pos is at the border
+        if(grid_.in_border(pos.row, pos.col, 0))
+        {
+            auto const placement =
+                static_cast<direction>(1 * (pos.row == -1) + 2 * (pos.col == len) + 3 * (pos.row == len));
+            auto const loc = (placement % 2 == 0) ? pos.row : pos.col;
+
+            bool const is_valid_endpoint = grid_.num(placement, loc) == 0 || grid_.num(placement, loc) == num;
+            if(!is_valid_endpoint)
+            {
+                spdlog::debug("Invalid path reached border {}[{}]={} from dir={} (is_valid_endpoint={})", placement,
+                              loc, grid_.num(placement, loc), pos.dir, is_valid_endpoint);
+                return false;
+            }
+
+            spdlog::debug("Path reached border and setting {}[{}]={} -> {}", placement, loc, grid_.num(placement, loc),
+                          num);
+
+            auto const num_temp       = grid_.num(placement, loc);
+            grid_.num(placement, loc) = num;
+
+            if(try_next_number_(number_idx + 1))
+                return true;
+
+            grid_.num(placement, loc) = num_temp;
+        }
+        else // grid_.in_border(pos.row, pos.col, 1) == true
+        {
+            auto const placement =
+                static_cast<direction>(1 * (pos.row == 0) + 2 * (pos.col == len - 1) + 3 * (pos.row == len - 1));
+            auto const loc = (placement % 2 == 0) ? pos.row : pos.col;
+
+            auto const m                 = mirror_border_placement[placement][pos.dir];
+            bool const is_valid_endpoint = grid_.num(placement, loc) == 0 || grid_.num(placement, loc) == num;
+            bool const can_place_mirror  = grid_.can_place_mirror(pos.row, pos.col, m);
+
+            if(m == MirrorNone || !is_valid_endpoint || !can_place_mirror)
+            {
+                spdlog::debug("Invalid path reached adjacent to {}[{}]={} from dir={} "
+                              "(is_valid_mirror={}, is_valid_endpoint={}, can_place_mirror={})",
+                              placement, loc, grid_.num(placement, loc), pos.dir, m == MirrorNone, is_valid_endpoint,
+                              can_place_mirror);
+                return false;
+            }
+
+            spdlog::debug("Path reached border and setting {}[{}]={} -> {}, after placing final mirror={} at ({},{})",
+                          placement, loc, grid_.num(placement, loc), num, m, pos.row, pos.col);
+
+            auto const num_temp       = grid_.num(placement, loc);
+            grid_.num(placement, loc) = num;
+            grid_.add_mirror_counter(pos.row, pos.col, m);
+
+            if(try_next_number_(number_idx + 1))
+                return true;
+
+            grid_.remove_mirror_counter(pos.row, pos.col, m);
+            grid_.num(placement, loc) = num_temp;
+        }
+
+        return false;
+    }
 };

@@ -11,7 +11,8 @@ add_compile_definitions(SPDLOG_FMT_EXTERNAL=1)
 
 include(cmake/FetchFmtLib.cmake)
 include(cmake/FetchSpdLog.cmake)
+include(cmake/FetchCLI11.cmake)
 
 # Add an executable
 add_executable(mirrors_3 march-2025/mirrors_3.cpp)
-target_link_libraries(mirrors_3 PRIVATE fmt::fmt spdlog::spdlog)
+target_link_libraries(mirrors_3 PRIVATE fmt::fmt spdlog::spdlog CLI11::CLI11)
