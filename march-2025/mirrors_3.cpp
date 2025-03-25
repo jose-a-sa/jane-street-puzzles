@@ -1,3 +1,6 @@
+#include <memory>
+#include <vector>
+
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
@@ -7,29 +10,18 @@
 
 #include <CLI/CLI.hpp>
 
-#include "mirror_grid.h"
+#include "march-2025/mirror_grid.h"
 
 
-void solve_default()
+static void init_logging(char const* log_file)
 {
-    mirror_grid grid5({0, 0, 0, 16, 0}, {0, 0, 9, 0, 0}, {0, 75, 0, 0, 0}, {0, 0, 36, 0, 0});
-
-    mirror_grid_solver solver5(grid5);
-    solver5.solve();
-
-    auto const res5 = grid5.get_result();
-    fmt::println("{}\nLeft: {}, Top: {}, Right: {}, Bottom: {}, Product: {}", grid5, res5.left, res5.top, res5.right,
-                 res5.bottom, res5.product);
-
-    mirror_grid grid10({0, 0, 0, 27, 0, 0, 0, 12, 225, 0}, {0, 0, 112, 0, 48, 3087, 9, 0, 0, 1},
-                       {0, 4, 27, 0, 0, 0, 16, 0, 0, 0}, {2025, 0, 0, 12, 64, 5, 0, 405, 0, 0});
-
-    mirror_grid_solver solver10(grid10);
-    solver10.solve();
-
-    auto const res10 = grid10.get_result();
-    fmt::println("{}\nLeft: {}, Top: {}, Right: {}, Bottom: {}, Product: {}", grid10, res10.left, res10.top,
-                 res10.right, res10.bottom, res10.product);
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
+    console_sink->set_level(spdlog::level::err);
+    auto basic_sink = std::make_shared<spdlog::sinks::basic_file_sink_st>(log_file, true);
+    basic_sink->set_level(spdlog::level::trace);
+    auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{console_sink, basic_sink});
+    spdlog::set_default_logger(logger);
+    spdlog::set_level(spdlog::level::trace);
 }
 
 
@@ -54,13 +46,8 @@ int main(int argc, char** argv)
         });
     CLI11_PARSE(app, argc, argv);
 
-    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    console_sink->set_level(spdlog::level::err);
-    auto basic_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("mirror_3.log", true);
-    basic_sink->set_level(spdlog::level::trace);
-    auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{console_sink, basic_sink});
-    spdlog::set_default_logger(logger);
-    spdlog::set_level(spdlog::level::trace);
+
+    init_logging("mirrors_3.log");
 
 
     if(opt_left->count() && opt_top->count() && opt_right->count() && opt_bottom->count())
@@ -80,7 +67,24 @@ int main(int argc, char** argv)
     }
     else
     {
-        solve_default();
+        mirror_grid grid5({0, 0, 0, 16, 0}, {0, 0, 9, 0, 0}, {0, 75, 0, 0, 0}, {0, 0, 36, 0, 0});
+
+        mirror_grid_solver solver5(grid5);
+        solver5.solve();
+
+        auto const res5 = grid5.get_result();
+        fmt::println("{}\nLeft: {}, Top: {}, Right: {}, Bottom: {}, Product: {}", grid5, res5.left, res5.top,
+                     res5.right, res5.bottom, res5.product);
+
+        mirror_grid grid10({0, 0, 0, 27, 0, 0, 0, 12, 225, 0}, {0, 0, 112, 0, 48, 3087, 9, 0, 0, 1},
+                           {0, 4, 27, 0, 0, 0, 16, 0, 0, 0}, {2025, 0, 0, 12, 64, 5, 0, 405, 0, 0});
+
+        mirror_grid_solver solver10(grid10);
+        solver10.solve();
+
+        auto const res10 = grid10.get_result();
+        fmt::println("{}\nLeft: {}, Top: {}, Right: {}, Bottom: {}, Product: {}", grid10, res10.left, res10.top,
+                     res10.right, res10.bottom, res10.product);
     }
 
     return 0;

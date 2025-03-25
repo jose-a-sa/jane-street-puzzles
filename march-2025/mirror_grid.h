@@ -1,19 +1,28 @@
+#ifndef MIRROR_GRID_H
+#define MIRROR_GRID_H
+
 #include <algorithm>
 #include <array>
 #include <initializer_list>
 #include <ranges>
 #include <span>
-#include <tuple>
 #include <vector>
 
 #include <fmt/core.h>
 
 #include <spdlog/spdlog.h>
 
-#include "integer_factorizations.h"
+#include "march-2025/integer_factorizations.h"
+#include "utils/restorer.h"
 
 
+#if defined(__GNUC__) || defined(__clang__)
 #define INLINE inline __attribute__((always_inline))
+#elif defined(_MSC_VER)
+#define INLINE __forceinline
+#else
+#define INLINE inline
+#endif
 
 
 class mirror_grid;
@@ -220,7 +229,7 @@ struct fmt::formatter<mirror_grid>
             {
                 auto const pos = 1 + (cell_width / cell_height) * h + (cell_width % cell_height) / 2;
 
-                fmt::format_to(ctx.out(), "{: >{}} ", h == cell_height / 2 ? l_num : "", width);
+                fmt::format_to(ctx.out(), "{: >{}} ", (h == cell_height / 2) ? l_num : "", width);
                 for(int c = 0; c < grid.length(); ++c)
                 {
                     auto const m    = grid.mirror(r, c);
@@ -243,32 +252,6 @@ struct fmt::formatter<mirror_grid>
         print_header(Bottom);
         return fmt::format_to(ctx.out(), "\n");
     }
-};
-
-
-template<class T>
-class restorer
-{
-public:
-    // clang-format off
-    constexpr restorer(T& value) noexcept
-        : value_{value}, old_value_{value}, completed_{false}
-    {}
-    // clang-format on
-
-    constexpr ~restorer() noexcept
-    {
-        if(completed_)
-            restore();
-    }
-
-    constexpr void complete() noexcept { completed_ = true; }
-    constexpr void restore() noexcept { value_ = old_value_; }
-
-private:
-    T&   value_;
-    T    old_value_;
-    bool completed_;
 };
 
 
@@ -380,6 +363,7 @@ private:
     constexpr bool try_complete_grid_()
     {
         restorer tx(grid_.nums_);
+        tx.wait();
 
         for(int i = 0; i < grid_.nums_.size(); ++i)
         {
@@ -422,8 +406,8 @@ private:
             // auto const end_placement = static_cast<direction>(1 * (row == -1) + 2 * (col == len) + 3 * (row == len));
             // auto const end_loc       = (end_placement % 2 == 0) ? row : col;
 
-            spdlog::debug("Path from {}[{}]={} arrived at pos=({},{}), dir={}. Setting to value {}.",
-                          placement, loc, grid_.num(placement, loc), row, col, dir, num_from_path);
+            spdlog::debug("Path from {}[{}]={} arrived at pos=({},{}), dir={}. Setting to value {}.", placement, loc,
+                          grid_.num(placement, loc), row, col, dir, num_from_path);
             grid_.num(placement, loc) = num_from_path;
         }
 
@@ -467,10 +451,9 @@ private:
             if(f.count == 0)
                 continue;
 
-            int const dist = f.base;
             --f.count;
 
-            auto const new_pos_lr = pos.next(MirrorLR, dist);
+            auto const new_pos_lr = pos.next(MirrorLR, f.base);
             if(is_pos_valid(new_pos_lr) && grid_.can_place_mirror(pos.row, pos.col, MirrorLR) &&
                is_path_valid_(pos, new_pos_lr))
             {
@@ -483,7 +466,7 @@ private:
                 grid_.remove_mirror_counter(pos.row, pos.col, MirrorLR);
             }
 
-            auto const new_pos_rl = pos.next(MirrorRL, dist);
+            auto const new_pos_rl = pos.next(MirrorRL, f.base);
             if(is_pos_valid(new_pos_rl) && grid_.can_place_mirror(pos.row, pos.col, MirrorRL) &&
                is_path_valid_(pos, new_pos_rl))
             {
@@ -496,7 +479,7 @@ private:
                 grid_.remove_mirror_counter(pos.row, pos.col, MirrorRL);
             }
 
-            auto const new_pos_none = pos.next(MirrorNone, dist - 1);
+            auto const new_pos_none = pos.next(MirrorNone, f.base - 1);
             if(factor_idx == 0 && is_pos_valid(new_pos_none) && is_path_valid_(pos, new_pos_none))
             {
                 spdlog::debug(
@@ -581,3 +564,6 @@ private:
         return false;
     }
 };
+
+
+#endif // MIRROR_GRID_H

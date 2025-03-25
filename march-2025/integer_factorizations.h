@@ -1,10 +1,10 @@
-#include <cstddef>
-#include <limits>
+#ifndef INTEGER_FACTORIZATIONS_H
+#define INTEGER_FACTORIZATIONS_H
+
 #include <span>
 #include <vector>
 
 #include <fmt/core.h>
-#include <fmt/format.h>
 #include <fmt/ranges.h>
 
 
@@ -156,3 +156,6 @@ struct fmt::formatter<factor<T>>
         return format_to(ctx.out(), "{}^{}", f.base, f.count);
     }
 };
+
+
+#endif // INTEGER_FACTORIZATIONS_H 
