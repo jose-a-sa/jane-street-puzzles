@@ -18,7 +18,7 @@ Therefore we can split this in two cases based on the root node possibilities:
 -   **_Root is 1:_** Since the root already contributes 1 to the path sum, the only way to keep the total sum less or equal than 1 for the rest of the path to contain _only 0s_. Let $$q=\mathbb{P}[\text{subtree contains an infinite all-0 path}]$$Then, similar to before, the probability that **either** left or right subtree has an all-0 path is $$2q - q^2$$
     Combining, the possibilities we have the equation: $$r=p(2r−r^2)+(1−p)(2q−q^2)$$
     Now, we have introduced probability of another event we need to solve for: the existence of a path with all 0s. This case is simpler as if the root node is not allowed to be $1$ and therefore that sub-case does not contribute (zero probability). Meaning the probability of a tree having a path with all 0s is probability of root node being zero and either left/subtree having all-0 path: $$q = p (2q - q^2)$$
-    This equation allows for a trivial solution $q = 0 \implies p = 1/(2-r)$, which is not what we are looking for. In order to remove it all together we remove a $q$ factor, which reduces the problem to the system:
+    This equation allows for a trivial solution $q = 0 \implies p = 1/(2-r)$, which is not what we are looking for. We remove it by dividing by a $q$ factor, which reduces the problem to the system:
     $$r = p(2r−r^2)+(1−p)(2q−q^2) \tag{1}$$
     $$1 = p(2−q) \tag{2}$$
 

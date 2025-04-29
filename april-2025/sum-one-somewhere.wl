@@ -17,9 +17,14 @@ Print["Probability of zero-sum path exists: ", N @ sol[[1, 2]]];
 
 (* using Groebner basis elimination to isolate relation in p and r *)
 
-gb = GroebnerBasis[{-r + p * (2 * r - r^2) + (1 - p) * (2 * q - q^2), -q + p * (2 * q - q^2)}, {p}, {q}];
-poly = Collect[Subtract @@ Expand @ FullSimplify[gb[[1]] == 0, r > 0 && (2 - r) p != 1], p, Simplify];
-Print["General polynomial of p : ", poly]
+gbp = GroebnerBasis[{-r + p * (2 * r - r^2) + (1 - p) * (2 * q - q^2),
+   -1 + p * (2 - q)}, {p, q}, {q}];
+gbq = GroebnerBasis[{-r + p * (2 * r - r^2) + (1 - p) * (2 * q - q^2),
+   -1 + p * (2 - q)}, {p, q}, {p}];
+polyp = Collect[Subtract @@ Expand @ FullSimplify[gbp[[1]] == 0, r > 0], p, Simplify];
+polyq = Collect[Subtract @@ Expand @ FullSimplify[gbq[[1]] == 0, r > 0], q, Simplify];
+Print["General polynomial of p : ", polyp]
+Print["General polynomial of q : ", polyq]
 
 
 func = Root[1 - 3 #1 + (2 + r) #1^2 + (-2 r + r^2) #1^3&, 1];
