@@ -1,6 +1,6 @@
 # Number Cross 5
 
-![](number-cross-5.png)
+![](number-cross-5-update.png)
 
 The 11-by-11 grid above is divided into several regions. Place positive digits (1-9) into the cells. Every cell within a region must contain the same digit, and orthogonally adjacent cells in different regions must have different digits.
 

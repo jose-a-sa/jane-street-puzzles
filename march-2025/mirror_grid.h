@@ -362,8 +362,7 @@ private:
 
     constexpr bool try_complete_grid_()
     {
-        restorer tx(grid_.nums_);
-        tx.wait();
+        qs::restorer rx(qs::defer_restore, grid_.nums_);
 
         for(int i = 0; i < grid_.nums_.size(); ++i)
         {
@@ -399,7 +398,7 @@ private:
             {
                 spdlog::debug("Path from {}[{}], resulted in number={} but expected {}, arriving at ({},{}), dir={}",
                               placement, loc, num_from_path, grid_.num(placement, loc), row, col, dir);
-                tx.restore();
+                rx.restore();
                 return false;
             }
 

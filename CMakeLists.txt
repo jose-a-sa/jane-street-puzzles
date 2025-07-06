@@ -19,3 +19,4 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 add_subdirectory(march-2025)
 add_subdirectory(may-2025)
+add_subdirectory(june-2025)
