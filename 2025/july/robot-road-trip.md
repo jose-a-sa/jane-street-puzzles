@@ -20,10 +20,10 @@ $$ \lim_{N\to\infty} \left[ \lim_{z \to 0^{+}} f(z,N) \right] $$
 ### 1. Main argument
 
 As the spanning rate tends to zero ($z \to 0^{+}$), the level of interations diminishes as trip beginnings form a Poisson process of density $z$ (starts per mile-minute). Effectively, assuming that we have a bounded space-time rectangle region
-$\mathcal{W} = [-T,T] \times [-L,L]$, then the probability of finding the trip starting in a subregion $V \subseteq \mathcal{W}$ is given by $z |V|$.
-Formally speaking, the lost distance (cost) $C_W(z, N, a)$ for trips in the rectangle $\mathcal{W}$ is given by:
+$W = [-T,T] \times [-L,L]$, then the probability of finding the trip starting in a subregion $V \subseteq W$ is given by $z |V|$.
+Formally speaking, the lost distance (cost) $C_W(z, N, a)$ for trips in the rectangle $W$ is given by:
 
-$$ C(\mathcal{W}, z, N, a) = \sum_{k \ge 0} e^{-z |\mathcal{W}|} \frac{(z |\mathcal{W}|)^k}{k!} \int_{(\mathcal{W} \times [1,2])^k} \frac{\mathrm{d}^k \mathbf{q}}{|\mathcal{W}|^k} \, C_{k}(\set{q_i}_{i \le k}; \mathcal{W}, z, N, a) $$
+$$ C(W, z, N, a) = \sum_{k \ge 0} e^{-z|W|} \frac{(z |W|)^k}{k!} \int_{(W \times [1,2])^k} \frac{\mathrm{d}^k \mathbf{q}}{|W|^k} \, C_{k}(\set{q_i \rvert i \le k}; W, z, N, a) $$
 
 where $q_i=(t_i, x_i, v_i)$ is a triplet for the trip start time, position and velocity, for car $i$.
 
@@ -44,12 +44,19 @@ where the probability density is $f(v,u) = 2 \cdot \mathbf{1}_{u < v}$.
 The lost distance in a 2 car interaction will depend whether cars are in the fast/slow lanes. Acceleration is constant at $\beta=1$ miles-per-second-per-second.
 This can be divided into 3 subcases:
 
-1. *Both cars in the fast lane ($u > a$)*: the slower car has to slow down to $a$ and then go back to $u$. Lost distance on deceleration and acceleration is equal, totalling to: $$\frac{(u-a)^2}{\beta}$$
-2. *Both cars in the slow lane ($v < a$)*: the slower car has to stop on the side (speed 0) and accelerate back to $u$. Lost distance is similar to above: $$\frac{u^2}{\beta}$$
-3. *Slow car in the slow lane, fast car in the fast lane ($v > a, u < a$)*: No interaction. Lost distance is $0$.
+  1. *Both cars in the fast lane* ($u > a$): the slower car has to slow down to $a$ and then go back to $u$. Lost distance on deceleration and acceleration is equal, totalling to:
+
+  $$ \frac{(u-a)^2}{\beta} $$
+   
+  2. *Both cars in the slow lane* ($v < a$): the slower car has to stop on the side (speed 0) and accelerate back to $u$. Lost distance is similar to above:
+    
+  $$ \frac{u^2}{\beta} $$
+     
+  3. *Slow car in the slow lane, fast car in the fast lane* ($v > a, u < a$): No interaction. Lost distance is $0$.
 
 Combining, lost distance from a single 2 car interaction is:
-$$ \ell(v,u) = \frac{u^2}{\beta} \,\mathbf{1}_{v < a} + \frac{(u-a)^2}{\beta} \,\mathbf{1}_{u > a} $$
+
+$$ \ell(v,u) = \frac{u^2}{\beta} \mathbf{1}\_{v < a} + \frac{(u-a)^2}{\beta} \mathbf{1}\_{v < a}  $$
 
 
 ### 3. Density of interactions
@@ -57,32 +64,33 @@ $$ \ell(v,u) = \frac{u^2}{\beta} \,\mathbf{1}_{v < a} + \frac{(u-a)^2}{\beta} \,
 We need to compute the rate of interations for 2 cars only, assuming that they happen infinity sparsesly separated (so it only affects the travelled time/distance once).
 Take the space-time region to be the full 2d-plane and imagine two cars spans with starting coordinates/velocity $(t_1, x_1, v_1)$, $(t_2, x_2, v_2)$.
 Using tarnslation symmetry we can set $(t_1, x_1) = (0,0)$ and $(t_2, x_2) = (\Delta t, \Delta x)$. We can assume, wlog, that the slower car is the one at origin.
-Therefore, in order to interact, the cars trajectories must intersect at $(t^{*}, x^{*})$:
+Therefore, in order to interact, the cars trajectories must intersect at $(t^{\*}, x^{\*})$:
 
-$$ x^{*} = u t^{*} \quad,\quad x^{*} = \Delta_{x} + v (t^{*} - \Delta_{t}) \qquad\implies\qquad t^{*} = \frac{- \Delta_{x} + v \Delta_{t} }{v - u} $$
+$$ x^{\*} = u t^{\*} \quad,\quad x^{\*} = \Delta_{x} + v (t^{\*} - \Delta_{t}) \qquad\implies\qquad t^{\*} = \frac{- \Delta_{x} + v \Delta_{t} }{v - u} $$
 
-However, this intersection must occur during a run of a **same length $N$** for both cars: $0 < t^{*} < \frac{N}{u}~,~ \Delta_{t} < t^{*} < \Delta_{t} + \frac{N}{v}$.
-This implied that the offset distance/time between cars must be in 
-$$ \mathcal{R} = \left\lbrace (\Delta_{t}, \Delta_{x}) ~\middle\rvert~ 0 < - \Delta_{x} + v \Delta_{t} < (v- u) \frac{N}{u} ~,~ 0 < - \Delta_{x} + u \Delta_{t} < (v - u) \frac{N}{v} \right\rbrace $$
+However, this intersection must occur during a run of a **same length $N$** for both cars: $0 < t^{\*} < \frac{N}{u}$, $\Delta_{t} < t^{\*} < \Delta_{t} + \frac{N}{v}$.
+This implied that the offset distance/time between cars must be in
 
-The rate at which cars are able to start in the region $\mathcal{R}$ to be able to intersect the car starting at $(t,x) = (0,0)$ is simply $z | \mathcal{R} |$, which can be computed to
+$$ \mathcal{R} = \left\lbrace (\Delta_{t}, \Delta_{x}) \middle\rvert : 0 < - \Delta_{x} + v \Delta_{t} < (v - u) \frac{N}{u} ~,~ 0 < - \Delta_{x} + u \Delta_{t} < (v - u) \frac{N}{v} \right\rbrace $$
 
-$$ z | \mathcal{R} | = z \left[ (v- u) \frac{N}{u} \right] \left[ (v - u) \frac{N}{v} \right] / \left| \det\left(\begin{matrix} v & -1 \\ u & -1 \end{matrix} \right) \right| = z N^2 \frac{(v - u)}{u v} $$
+The rate at which cars are able to start in the region $\mathcal{R}$ to be able to intersect the car starting at $(t,x) = (0,0)$ is simply $z | \mathcal{R} |$, which is equivalent to
+
+$$ z |R| = z \left[ (v- u) \frac{N}{u} \right] \left[ (v - u) \frac{N}{v} \right] / \left| \det\left(\begin{matrix} v & -1 \\\ u & -1 \end{matrix} \right) \right| = z N^2 \frac{(v - u)}{u v} $$
 
 The rate of interaction is therefore, proportional to
 
-$$\rho(v, u) \,\propto\, 2 z N^2 \frac{(v - u)}{u v} \mathbf{1}_{u < v} $$
+$$\rho(v, u) \propto 2 z N^2 \frac{(v - u)}{u v} \mathbf{1}_{u < v} $$
 
 This can be normalized in $[1,2]^2$ but since we are optimizing for $a$, the additional constant is not relevant.
 
-**Note:** If $v=u$ we do not have interactions as expected. One would expect that rate of interaction would be modelled by the relative velocity $(v - u)$. This would be the case if the cars travelled for the same about of fixed before exiting the highway. Because the cars tavel the **same distance $N$**, the rate is proportional to $(\frac{1}{u} - \frac{1}{v})$ instead. This behavior is still maintained as $N \to \infty$.
+**Note:** If $v=u$ we do not have interactions as expected. One would expect that rate of interaction would be modelled by the relative velocity $(v - u)$. This would be the case if the cars travelled for the same about of fixed before exiting the highway. Because the cars tavel the **same distance $N$**, the rate is proportional to $\left(\frac{1}{u} - \frac{1}{v}\right)$ instead. This behavior is still maintained as $N \to \infty$.
 
 
 ### 4. Optimization equation and $a$ solution
 
 The expected loss due to sparse interactions $(z \to 0^+)$ is given by
 
-$$ L(a) = \int_{[1,2]^2} \mathrm{d}v \, \mathrm{d}u \, \ell(v,u) \rho(v, u) \,\propto\, \int_{1}^{2} \mathrm{d}v \int_{1}^{2} \mathrm{d}u \,\Big[ u^2 \,\mathbf{1}_{v < a} + (u-a)^2 \,\mathbf{1}_{u > a} \Big] \frac{(v - u)}{u v} \mathbf{1}_{u < v} $$
+$$ L(a) = \int\_{[1,2]^2} \mathrm{d}v \mathrm{d}u \~ \ell(v,u) \rho(v, u) \propto \int\_{1}^{2} \mathrm{d}v \int\_{1}^{2} \mathrm{d}u \Big\[ u^2 \\,\mathbf{1}\_{v < a} + (u-a)^2 \\,\mathbf{1}\_{u > a} \Big\] \frac{(v - u)}{u v} \mathbf{1}\_{u < v} $$
 
 Integrating this and taking the derivative we are left with solving the equation
 
