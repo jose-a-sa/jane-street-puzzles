@@ -83,7 +83,11 @@ $$\rho(v, u) \propto 2 z N^2 \frac{(v - u)}{u v} \mathbf{1}_{u < v} $$
 
 This can be normalized in $[1,2]^2$ but since we are optimizing for $a$, the additional constant is not relevant.
 
-**Note:** If $v=u$ we do not have interactions as expected. One would expect that rate of interaction would be modelled by the relative velocity $(v - u)$. This would be the case if the cars travelled for the same about of fixed before exiting the highway. Because the cars tavel the **same distance $N$**, the rate is proportional to $\left(\frac{1}{u} - \frac{1}{v}\right)$ instead. This behavior is still maintained as $N \to \infty$.
+**Note:** If $v=u$ we do not have interactions as expected. 
+One would expect that rate of interaction would be modelled by the relative velocity $(v - u)$. 
+This would be the case if the cars travelled for the same amount of time before exiting the highway. 
+Instead, because the cars tavel the **same distance $N$**, the rate is proportional to $\left(\frac{1}{u} - \frac{1}{v}\right)$. 
+This behavior is still maintained as $N \to \infty$.
 
 
 ### 4. Optimization equation and $a$ solution
