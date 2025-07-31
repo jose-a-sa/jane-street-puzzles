@@ -19,6 +19,8 @@ The answer to this month’s puzzle is the sum of all the numbers formed in the 
 The program uses a backtrack algorithm to find the solution.
 
 -   Iterate through all the possible initial region number placements using DFS, making sure neighbor regions have different digits.
+-   Reduced the initial digit search space condiring the allowed digits in all highlighted cell within each reagion.
+-   Allowed digits depend on the row the highlighted cell is placed. Predicated can have restricted digits, in particular `product_of_digits_matches<20>`, `product_of_digits_matches<25>` and `product_of_digits_matches<2025>`, which can only have digits `{1, 2, 4, 5}`, `{1, 5}` and `{1, 3, 5}`, respectively.
 -   Compile-time computation of all possible $(d+1)(d+2)(d+3)/6$ displacements `{left, top, right, bottom}` for all digits $d\in\{1,\ldots,9\}$.
 -   Iterate grid in row-major order, trying configurations where current cell is tiled (checking all valid displacements) and non-tiled.
 -   While iterating each cell in a given row `Row`, we check the top cell (above row) to check if it was tiled: backtrack if the number ending on the top tiled cell does not obey predicate the row `Row-1` predicate.
