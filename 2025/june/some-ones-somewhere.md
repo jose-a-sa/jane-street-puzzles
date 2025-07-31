@@ -2,7 +2,7 @@
 
 ## Description
 
-The answer to this month’s puzzle – which can be seen [here](2025/june-puzzle.pdf) – is a sentence.
+The answer to this month’s puzzle – which can be seen [here](june-2025-puzzle.pdf) – is a sentence.
 
 ## Approach
 
