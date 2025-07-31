@@ -1,6 +1,7 @@
 #ifndef PARTRIDGE_TILING_H
 #define PARTRIDGE_TILING_H
 
+#include <algorithm>
 #include <array>
 #include <bitset>
 #include <cstdint>
@@ -13,8 +14,8 @@
 #include <fmt/std.h>
 
 #include <spdlog/spdlog.h>
-#include <vector>
 
+#include "utils/base.h"
 
 struct square_tile
 {
@@ -40,6 +41,13 @@ template<size_t N>
 class partridge_square_tiling
 {
 public:
+    static constexpr size_t kGridSide = N * (N + 1) / 2;
+    static constexpr size_t kGridArea = kGridSide * kGridSide;
+
+    static constexpr std::pair<int, int> kUnusedPosition = {-1, -1};
+    static constexpr uint8_t             kUnuserArea     = -1;
+
+
     constexpr explicit partridge_square_tiling()
         : tile_positions_{},
           tiles_count_{}
@@ -64,30 +72,23 @@ public:
            t.col + t.side > kGridSide)
             return false;
 
-        if(this->tile_count(t.side) >= t.side * (t.side + 1) / 2)
-        {
-            // spdlog::debug("{} cannot be placed. Too many tiles of side {} already placed: {}", t, t.side,
-            // tiles_count_);
+        if(this->tile_count(t.side) >= t.side)
             return false;
-        }
 
         if(this->overlaps_with_placed(t))
-        {
-            // spdlog::debug("{} overlaps with already placed tiles", t);
             return false;
-        }
 
-        this->push_tile(t);
+        this->unchecked_push_tile(t);
         return true;
     }
 
-    constexpr auto push_tile(square_tile const& t) noexcept
+    constexpr auto unchecked_push_tile(square_tile const& t) noexcept
     {
-        auto const row_mask = this->get_row_mask_(t);
-        for(int r = t.row; r < t.row + t.side; ++r)
-            filled_pos_[r] |= row_mask;
+        auto const row_mask = get_row_mask_(t);
+        for(auto& row_bits: filled_pos_ | std::views::drop(t.row) | std::views::take(t.side))
+            row_bits |= row_mask;
 
-        auto const idx       = this->size_offset_(t.side) + tiles_count_[t.side];
+        auto const idx       = size_offset_(t.side - 1) + tiles_count_[t.side];
         tile_positions_[idx] = {t.row, t.col};
         ++tiles_count_[t.side];
     }
@@ -98,39 +99,35 @@ public:
             return std::nullopt;
 
         --tiles_count_[side];
-        auto const idx    = this->size_offset_(side) + tiles_count_[side];
+        auto const idx    = size_offset_(side - 1) + tiles_count_[side];
         auto const [r, c] = std::exchange(tile_positions_[idx], kUnusedPosition);
 
         square_tile t{side, r, c};
-        auto const  row_mask = this->get_row_mask_(t);
-        for(int r = t.row; r < t.row + t.side; ++r)
-            filled_pos_[r] &= ~row_mask;
+        auto const  row_mask = get_row_mask_(t);
+        for(auto& row_bits: filled_pos_ | std::views::drop(t.row) | std::views::take(t.side))
+            row_bits &= ~row_mask;
 
         return t;
     }
 
-    __attribute((always_inline)) constexpr auto overlaps_with_placed(square_tile const& t) const noexcept -> bool
+    INLINE constexpr auto overlaps_with_placed(square_tile const& t) const noexcept -> bool
     {
-        bool overlaps = false;
+        auto overlaps = false;
 
-        auto const row_mask = this->get_row_mask_(t);
-        for(int r = t.row; r < t.row + t.side; ++r)
-            overlaps |= (filled_pos_[r] & row_mask).any();
+        auto const row_mask = get_row_mask_(t);
+        for(auto& row_bits: filled_pos_ | std::views::drop(t.row) | std::views::take(t.side))
+            overlaps |= (row_bits & row_mask).any();
 
         return overlaps;
     }
 
     constexpr auto tile_counts() const noexcept { return std::span{tiles_count_}.subspan(1); }
 
+    constexpr auto& filled_mask_array() const noexcept { return filled_pos_; }
+
+    constexpr auto& tile_positions() const noexcept { return tile_positions_; }
 
 private:
-    static constexpr size_t kGridSide = N * (N + 1) / 2;
-    static constexpr size_t kGridArea = kGridSide * kGridSide;
-
-    static constexpr std::pair<int, int> kUnusedPosition = {-1, -1};
-    static constexpr uint8_t             kUnuserArea     = -1;
-
-
     std::array<std::pair<int, int>, kGridSide> tile_positions_{};
     std::array<uint32_t, N + 1>                tiles_count_{};
 
@@ -141,27 +138,21 @@ private:
         return (std::bitset<kGridSide>{}.flip() >> (kGridSide - t.side)) << t.col;
     }
 
-    constexpr auto size_offset_(uint32_t const side) const noexcept { return side * (side - 1) / 2; }
-
-    friend struct fmt::formatter<partridge_square_tiling<N>>;
-
-    template<size_t M>
-    friend class partridge_square_tiling_solver;
-
-    template<size_t M>
-    friend class partridge_square_tiling_solver_reversed;
+    constexpr auto size_offset_(uint32_t const side) const noexcept { return side * (side + 1) / 2; }
 
 public:
     static constexpr auto kSideSequence = []()
     {
         std::array<uint32_t, kGridSide> result = {};
-        uint32_t                        k      = 1;
-        for(int i = 0; i < kGridSide; ++i)
+
+        uint32_t k = 1;
+        for(int const i: std::views::iota(0u, kGridSide))
         {
             while(k * (k + 1) / 2 <= i)
                 ++k;
             result[i] = k;
         }
+
         return result;
     }();
 };
@@ -175,34 +166,37 @@ struct fmt::formatter<partridge_square_tiling<N>>
     template<typename FormatContext>
     constexpr auto format(partridge_square_tiling<N> const& tilling, FormatContext& ctx) const
     {
-        static constexpr auto kGridSide     = N * (N + 1) / 2;
-        static constexpr auto kSideSequence = partridge_square_tiling<N>::kSideSequence;
+        using partridge_square_tiling<N>::kGridSide;
+        using partridge_square_tiling<N>::kSideSequence;
+        using partridge_square_tiling<N>::kUnusedPosition;
 
         std::array<std::array<uint8_t, kGridSide>, kGridSide> grid{};
         for(auto& row: grid)
             row.fill(-1);
 
-        auto place_tile = [&](uint32_t side, int row, int col, uint8_t index)
+        auto draw_tile = [&](uint32_t side, int row, int col, uint8_t index)
         {
             for(size_t r = row; r < row + side; ++r)
                 for(size_t c = col; c < col + side; ++c)
                     grid[r][c] = index;
         };
 
-        auto indexed_tiles = std::views::zip(std::views::iota(0u), kSideSequence, tilling.tile_positions_);
-        for(auto [idx, side, p]: indexed_tiles)
+        auto tiles = std::views::zip(kSideSequence, tilling.tile_positions()) |
+                     std::views::filter([](auto const& t) { return std::get<1>(t) != kUnusedPosition; });
+
+        for(auto [idx, pos]: std::views::zip(std::views::iota(0u), tiles))
         {
-            if(p == partridge_square_tiling<N>::kUnusedPosition)
-                continue;
-            place_tile(side, p.first, p.second, idx);
+            auto const& [side, p] = pos;
+            draw_tile(side, p.first, p.second, idx);
         }
 
+        auto const& filled_mask = tilling.filled_mask_array();
         fmt::format_to(ctx.out(), "{:-^{}}\n", "", kGridSide * 3 + 2);
         for(size_t r = 0; r < kGridSide; ++r)
         {
             for(size_t c = 0; c < kGridSide; ++c)
             {
-                auto const placed = tilling.filled_pos_[r][c] ? '*' : ' ';
+                auto const placed = filled_mask[r][c] ? '*' : ' ';
                 if(c == 0)
                     fmt::format_to(ctx.out(), "|");
                 if(grid[r][c] == uint8_t(-1))

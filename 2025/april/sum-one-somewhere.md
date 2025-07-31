@@ -1,5 +1,7 @@
 # Sum One, Somewhere
 
+## Description
+
 ![](sum-one-somewhere.png)
 
 For a fixed p, independently label the nodes of an infinite complete binary tree 0 with probability p, and 1 otherwise. For what p is there exactly a 1/2 probability that there exists an infinite path down the tree that sums to at most 1 (that is, all nodes visited, with the possible exception of one, will be labeled 0). Find this value of p accurate to 10 decimal places.
@@ -28,7 +30,7 @@ $$ (2r−r^2) p^3 - (2+r) p^2 + 3p - 1 = 0$$
 Similarly, by multiplying the previous equation by $(2-q)^3$, we obtain
 $$q^3 - 3 q^2 + (2 + r) q -r^2 = 0$$
 
-The problem requires that $r = \mathbb{P}[X] = 1/2$, which implies that the solutions is given by the real roots of 
+The problem requires that $r = \mathbb{P}[X] = 1/2$, which implies that the solutions is given by the real roots of
 $$3 p^3 - 10 p^2 + 12 p - 4 = 0$$
 $$4 q^3 - 12 q^2 + 10 q -1 = 0$$
 These equations have a unique real solutions

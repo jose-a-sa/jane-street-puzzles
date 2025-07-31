@@ -4,16 +4,19 @@
 #include <algorithm>
 #include <array>
 #include <bitset>
+#include <cstdint>
 #include <functional>
 #include <ranges>
 #include <span>
 
 #include <fmt/core.h>
 
+#include "utils/base.h"
+
 
 template<class Pred>
-concept CRowPredicate = requires(Pred pred, int64_t x, std::span<uint8_t const> cells) {
-    { pred.check(x, cells) } -> std::same_as<bool>;
+concept CRowPredicate = requires(Pred pred, std::span<uint8_t const> digits) {
+    { pred(digits) } -> std::same_as<std::tuple<bool, int64_t>>;
     { pred.allowed_digits() } -> std::same_as<std::bitset<10>>;
 };
 
@@ -21,20 +24,22 @@ concept CRowPredicate = requires(Pred pred, int64_t x, std::span<uint8_t const> 
 template<class Derived>
 struct row_predicate
 {
-    constexpr auto check(int64_t const x, std::span<uint8_t const> cells) const noexcept -> bool
+    constexpr auto operator()(std::span<uint8_t const> digits) const noexcept -> std::tuple<bool, int64_t>
     {
-        if(cells.size() < 2)
-            return false;
+        if(digits.size() < 2)
+            return {false, 0};
 
         bool const all_digit_valid =
-            std::ranges::all_of(cells, [&](uint8_t const& c) { return allowed_digits().test(c); });
+            std::ranges::all_of(digits, [&](uint8_t const& c) { return allowed_digits().test(c); });
         if(!all_digit_valid)
-            return false;
+            return {false, 0};
 
-        return self()(x, cells);
+        auto const x = std::ranges::fold_left(digits, int64_t{}, [](auto acc, auto c) { return 10 * acc + c; });
+
+        return {self().check(x, digits), x};
     }
 
-    constexpr auto allowed_digits() const noexcept { return std::bitset<10>{0b1111111110}; }
+    constexpr auto allowed_digits() const noexcept -> std::bitset<10> { return 0b1111111110; }
 
 protected:
     constexpr auto& self() const noexcept { return static_cast<Derived const&>(*this); }
@@ -46,7 +51,7 @@ struct is_perfect_square : row_predicate<is_perfect_square>
 private:
     friend class row_predicate<is_perfect_square>;
 
-    constexpr auto operator()(int64_t const x, std::span<uint8_t const>) const noexcept -> bool
+    constexpr auto check(int64_t const x, std::span<uint8_t const>) const noexcept -> bool
     {
         auto const s = static_cast<int64_t>(std::sqrt(x));
         return s * s == x || (s + 1) * (s + 1) == x;
@@ -59,7 +64,7 @@ struct is_odd_palindrome : row_predicate<is_odd_palindrome>
 private:
     friend class row_predicate<is_odd_palindrome>;
 
-    constexpr auto operator()(int64_t const, std::span<uint8_t const> digits) const noexcept -> bool
+    constexpr auto check(int64_t const, std::span<uint8_t const> digits) const noexcept -> bool
     {
         auto const mid         = digits.size() / 2;
         auto const first_half  = digits.subspan(0, mid);
@@ -73,15 +78,15 @@ private:
 
 struct fibonacci_sequence
 {
-    template<size_t Max>
-    static constexpr auto compute() noexcept -> std::array<int64_t, Max>
+    template<size_t SeqSize>
+    static constexpr auto compute() noexcept -> std::array<int64_t, SeqSize>
     {
-        std::array<int64_t, Max> seq{};
-        if constexpr(Max > 0)
+        std::array<int64_t, SeqSize> seq{};
+        if constexpr(SeqSize > 0)
             seq[0] = 0;
-        if constexpr(Max > 1)
+        if constexpr(SeqSize > 1)
             seq[1] = 1;
-        for(size_t i = 2; i < Max; ++i)
+        for(size_t i = 2; i < SeqSize; ++i)
             seq[i] = seq[i - 1] + seq[i - 2];
         return seq;
     }
@@ -92,20 +97,22 @@ struct is_fibonacci : row_predicate<is_fibonacci>
 private:
     friend class row_predicate<is_fibonacci>;
 
-    constexpr auto operator()(int64_t const x, std::span<uint8_t const>) const noexcept -> bool
+    constexpr auto check(int64_t const x, std::span<uint8_t const>) const noexcept -> bool
     {
+        // Precompute Fibonacci sequence array up to 93-th term.
+        // Fibonacci(93) = 12200160415121876738, which is the largest Fibonacci number that fits in int64_t.
+        static constexpr auto fibonacci_seq_ = fibonacci_sequence::compute<93>();
         return std::ranges::binary_search(fibonacci_seq_, x);
     }
-
-    static constexpr auto fibonacci_seq_ = fibonacci_sequence::compute<56>();
 };
+
 
 struct is_prime : row_predicate<is_prime>
 {
 private:
     friend class row_predicate<is_prime>;
 
-    constexpr auto operator()(int64_t const x, std::span<uint8_t const>) const noexcept -> bool
+    constexpr auto check(int64_t const x, std::span<uint8_t const>) const noexcept -> bool
     {
         if(x < 2)
             return false;
@@ -131,10 +138,9 @@ private:
     }
 
     // Modular multiplication using 128-bit arithmetic to avoid overflow (platform-dependent)
-    constexpr auto mul_mod(uint64_t x, uint64_t y, uint64_t m) const noexcept -> uint64_t
+    INLINE constexpr auto mul_mod(uint64_t x, uint64_t y, uint64_t m) const noexcept -> uint64_t
     {
-        using uint128_t = __uint128_t;
-        return (static_cast<uint128_t>(x) * y) % m;
+        return (static_cast<__uint128_t>(x) * y) % m;
     }
 
     constexpr auto pow_mod(uint64_t base, uint64_t exp, uint64_t mod) const noexcept -> uint64_t
@@ -161,12 +167,12 @@ private:
         while((d & 1) == 0)
         {
             d >>= 1;
-            r++;
+            ++r;
         }
         uint64_t x = pow_mod(a, d, n);
         if(x == 1 || x == n - 1)
             return true;
-        for(int i = 1; i < r; i++)
+        for(int i = 1; i < r; ++i)
         {
             x = mul_mod(x, x, n);
             if(x == n - 1)
@@ -183,7 +189,7 @@ struct is_multiple_of : row_predicate<is_multiple_of<N>>
 private:
     friend class row_predicate<is_multiple_of<N>>;
 
-    constexpr auto operator()(int64_t const x, std::span<uint8_t const>) const noexcept -> bool { return x % N == 0; }
+    constexpr auto check(int64_t const x, std::span<uint8_t const>) const noexcept -> bool { return x % N == 0; }
 };
 
 
@@ -204,9 +210,6 @@ struct product_of_digits_matches : row_predicate<product_of_digits_matches<N>>
             }
         }
 
-        if(m == 0)
-            return std::bitset<10>{0b1111111110};
-
         std::bitset<10> allowed_digits;
         allowed_digits[1] = true;
         allowed_digits[2] = factor_count[2] >= 1;
@@ -223,9 +226,9 @@ struct product_of_digits_matches : row_predicate<product_of_digits_matches<N>>
 private:
     friend class row_predicate<product_of_digits_matches<N>>;
 
-    constexpr auto operator()(int64_t const, std::span<uint8_t const> cells) const noexcept -> bool
+    constexpr auto check(int64_t const, std::span<uint8_t const> digits) const noexcept -> bool
     {
-        return std::ranges::fold_left(cells, int64_t{1}, std::multiplies{}) == N;
+        return std::ranges::fold_left(digits, int64_t{1}, std::multiplies{}) == N;
     }
 };
 
@@ -234,9 +237,9 @@ struct is_divisible_by_its_digits : row_predicate<is_divisible_by_its_digits>
 private:
     friend class row_predicate<is_divisible_by_its_digits>;
 
-    constexpr auto operator()(int64_t const x, std::span<uint8_t const> cells) const noexcept -> bool
+    constexpr auto check(int64_t const x, std::span<uint8_t const> digits) const noexcept -> bool
     {
-        return std::ranges::all_of(cells, [&](auto c) { return x % c == 0; });
+        return std::ranges::all_of(digits, [&](auto d) { return x % d == 0; });
     }
 };
 

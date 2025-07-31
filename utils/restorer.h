@@ -3,40 +3,130 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdio>
-#include <initializer_list>
 #include <memory>
 #include <tuple>
 #include <type_traits>
 
 namespace qs
 {
-
     struct defer_restore_t
     {};
     inline constexpr defer_restore_t defer_restore{};
+
+    template<class T>
+    class restorer_bind;
+
+    template<class... Ts>
+    class restorer;
+
+    namespace details
+    {
+        template<class T>
+        struct restorer_inplace_binder
+        {
+            using value_type = std::remove_reference_t<T>;
+
+            constexpr restorer_inplace_binder(T& ref)
+                : value_{ref},
+                  ref_{ref} {};
+
+            constexpr void restore() { ref_ = value_; }
+
+        private:
+            value_type  value_;
+            value_type& ref_;
+        };
+
+        template<class T>
+        struct restorer_external_binder
+        {
+            using value_type = std::remove_reference_t<T>;
+
+            constexpr restorer_external_binder(restorer_bind<T> bind)
+                : ref_{bind.ref_},
+                  external_{bind.external_}
+            {
+                external_ = ref_;
+            }
+
+            constexpr void restore() { ref_ = external_; }
+
+        private:
+            value_type& ref_;
+            value_type& external_;
+        };
+
+
+        template<class T, class = void>
+        struct is_restorer_bind : std::false_type
+        {};
+
+        template<class T>
+        struct is_restorer_bind<T, std::void_t<typename T::value_type>>
+            : std::is_same<std::decay_t<T>, restorer_bind<typename T::value_type>>
+        {};
+
+        template<class T>
+        static constexpr bool is_restorer_bind_v = is_restorer_bind<T>::value;
+
+        template<class Arg, class = void>
+        struct restored_binder_selector : std::type_identity<restorer_inplace_binder<std::remove_reference_t<Arg>>>
+        {};
+
+        template<class Arg>
+        struct restored_binder_selector<Arg, std::void_t<typename std::remove_reference_t<Arg>::value_type>>
+            : std::conditional<is_restorer_bind_v<std::remove_reference_t<Arg>>,
+                               restorer_external_binder<typename std::remove_reference_t<Arg>::value_type>,
+                               restorer_inplace_binder<std::remove_reference_t<Arg>>>
+        {};
+
+        template<class Arg>
+        using restored_binder_selector_t = restored_binder_selector<Arg>::type;
+    } // namespace details
+
+
+    template<class T>
+    class restorer_bind
+    {
+    public:
+        using value_type = std::remove_reference_t<T>;
+
+        constexpr restorer_bind(T& ref, T& external)
+            : ref_{ref},
+              external_{external}
+        {}
+
+    private:
+        value_type& ref_;
+        value_type& external_;
+
+        template<class U>
+        friend class details::restorer_external_binder;
+    };
 
     template<class... Ts>
     class restorer
     {
     public:
-        using value_type = std::tuple<Ts...>;
-        using reference  = std::tuple<Ts&...>;
+        using bindings_tuple = std::tuple<details::restored_binder_selector_t<Ts>...>;
 
-        constexpr restorer(Ts&... refs) noexcept
-            : refs_(refs...),
-              values_(refs...),
+        template<class... Args>
+        constexpr restorer(Args&&... args) noexcept
+            : bindings_(bind_(std::forward<Args>(args))...),
               completed_{true}
         {}
 
-        constexpr restorer(defer_restore_t, Ts&... refs) noexcept
-            : refs_(refs...),
-              values_(refs...),
+        template<class... Args>
+        constexpr restorer(defer_restore_t, Args&&... args) noexcept
+            : bindings_(bind_(std::forward<Args>(args))...),
               completed_{false}
         {}
 
         restorer(restorer const&)            = delete;
         restorer& operator=(restorer const&) = delete;
+
+        restorer(restorer&&)            = default;
+        restorer& operator=(restorer&&) = default;
 
         constexpr ~restorer() noexcept
         {
@@ -44,56 +134,36 @@ namespace qs
                 restore();
         }
 
-        constexpr auto& wait() noexcept
-        {
-            completed_ = false;
-            return *this;
-        }
         constexpr auto& complete() noexcept
         {
             completed_ = true;
             return *this;
         }
-        constexpr void restore() noexcept { refs_ = values_; }
 
-        template<class... Restorters>
-        friend constexpr auto restorer_combine(Restorters&&... restorers) noexcept;
+        constexpr void restore() noexcept
+        {
+            std::apply([](auto&... b) { (b.restore(), ...); }, bindings_);
+        }
 
     private:
-        reference  refs_;
-        value_type values_;
-        bool       completed_;
+        bindings_tuple bindings_;
+        bool           completed_;
+
+        template<class Arg>
+        static constexpr auto bind_(Arg&& arg) -> decltype(auto)
+        {
+            if constexpr(details::is_restorer_bind_v<std::remove_reference_t<Arg>>)
+                return details::restorer_external_binder(std::forward<Arg>(arg));
+            else
+                return details::restorer_inplace_binder(std::forward<Arg>(arg));
+        }
     };
 
-    template<class R>
-    struct is_restorer : std::false_type
-    {};
+    template<class... Ts>
+    restorer(Ts&&...) -> restorer<std::remove_reference_t<Ts>...>;
 
     template<class... Ts>
-    struct is_restorer<restorer<Ts...>> : std::true_type
-    {};
-
-    template<class R>
-    inline constexpr bool is_restorer_v = is_restorer<R>::value;
-
-
-    template<class... Restorters> // require all to be restorer and rvalue reference
-        requires(std::conjunction_v<is_restorer<std::remove_reference_t<Restorters>>,
-                                    std::is_rvalue_reference<Restorters>> &&
-                 ...)
-    constexpr auto restorer_combine(Restorters&&... restorers) noexcept
-    {
-        bool const all_completed = (std::forward<Restorters>(restorers).completed_ && ...);
-
-        using swallow = std::initializer_list<int>;
-        (void)swallow{(std::forward<Restorters>(restorers).wait(), 0)...};
-
-        auto res       = std::apply([](auto&... r) { return restorer(r...); },
-                              std::tuple_cat((std::forward<Restorters>(restorers).refs_)...));
-        res.values_    = std::tuple_cat(std::forward<Restorters>(restorers).values_...);
-        res.completed_ = all_completed;
-        return res;
-    }
+    restorer(defer_restore_t, Ts&&...) -> restorer<std::remove_reference_t<Ts>...>;
 
 
     template<class T, size_t N>
@@ -112,7 +182,9 @@ namespace qs
               values_{{refs...}},
               ptrs_{{std::addressof(refs)...}},
               completed_{true}
-        {}
+        {
+            static_assert(sizeof...(refs) <= N, "Too many references for restorer_array");
+        }
 
         template<class... Refs>
         constexpr restorer_array(defer_restore_t, Refs&... refs) noexcept
@@ -120,7 +192,9 @@ namespace qs
               values_{{refs...}},
               ptrs_{{std::addressof(refs)...}},
               completed_{false}
-        {}
+        {
+            static_assert(sizeof...(refs) <= N, "Too many references for restorer_array");
+        }
 
         restorer_array(restorer_array const&)            = delete;
         restorer_array& operator=(restorer_array const&) = delete;
@@ -159,7 +233,7 @@ namespace qs
             ++size_;
         }
 
-        constexpr void clear(bool defer_restore = false) noexcept
+        constexpr void reset(bool defer_restore = false) noexcept
         {
             size_      = 0;
             completed_ = !defer_restore;

@@ -9,7 +9,7 @@ endif()
 
 if(fmt_FOUND OR fmt_POPULATED)
     message(STATUS "Using existing fmt library found in ${fmt_BINARY_DIR}")
-    set(SPDLOG_FMT_EXTERNAL ON CACHE BOOL "Use external fmt librar" FORCE)
+    set(SPDLOG_FMT_EXTERNAL ON CACHE BOOL "Use external fmt library" FORCE)
 endif()
 
 include(FetchContent)

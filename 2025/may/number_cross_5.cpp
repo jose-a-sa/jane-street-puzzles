@@ -1,8 +1,5 @@
 #include <array>
 #include <cstdint>
-#include <numeric>
-#include <ranges>
-#include <span>
 #include <sys/types.h>
 #include <tuple>
 
@@ -15,9 +12,9 @@
 #include <spdlog/spdlog.h>
 
 
-#include "may-2025/number_cross_grid.h"
-#include "may-2025/number_cross_grid_predicates.h"
-#include "may-2025/number_cross_grid_solver.h"
+#include "2025/may/number_cross_grid.h"
+#include "2025/may/number_cross_grid_predicates.h"
+#include "2025/may/number_cross_grid_solver.h"
 
 
 template<size_t N>
@@ -35,7 +32,8 @@ static void init_logging(char const (&log_file)[N])
 
 int main(int argc, char** argv)
 {
-    init_logging("number_cross_5_single.log");
+    init_logging("number_cross_5.log");
+    spdlog::info("Starting number-cross-5");
 
     // clang-format off
     constexpr auto preds5 = std::make_tuple(
@@ -60,7 +58,6 @@ int main(int argc, char** argv)
          {0, 0, 0, 0, 1},
          {0, 0, 0, 1, 1}}};
     // clang-format on
-
 
     number_cross_grid grid5(preds5, regions5, highlighted5);
 
@@ -117,9 +114,7 @@ int main(int argc, char** argv)
     constexpr auto grid_region_digits_hint11 = std::array<uint8_t, 9>{{2, 4, 3, 3, 4, 1, 6, 7, 7}};
     // clang-format on
 
-    number_cross_grid grid11(preds11, regions11, highlighted11);
-
-    // number_cross_grid        grid11_hint = grid11;
+    // number_cross_grid        grid11_hint(preds11, regions11, highlighted11);
     // number_cross_grid_solver solver11_hint(grid11_hint);
     // solver11_hint.solve_with_region_digits(grid_region_digits_hint11);
 
@@ -128,11 +123,12 @@ int main(int argc, char** argv)
     // fmt::println("\nGrid 11 (hint) unique numbers: {}, Sum: {}", solver11_hint.get_unique_numbers(),
     //              std::ranges::fold_left(solver11_hint.get_unique_numbers(), int64_t{}, std::plus<>{}));
 
+    number_cross_grid        grid11(preds11, regions11, highlighted11);
     number_cross_grid_solver solver11(grid11);
     solver11.solve();
 
     fmt::println("\nGrid 11 with initial digits:\n{:R}", grid11);
-    fmt::println("\nGrid 11 after placing tiles:\n{:D}", grid11);
+    fmt::println("\nGrid 11 after placing tiles:\n{}", grid11);
     fmt::println("\nGrid 11 unique numbers: {}, Sum: {}", solver11.get_unique_numbers(),
                  std::ranges::fold_left(solver11.get_unique_numbers(), int64_t{}, std::plus<>{}));
 

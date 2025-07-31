@@ -18,7 +18,8 @@
 #include <fmt/ranges.h>
 #include <spdlog/spdlog.h>
 
-#include "may-2025/number_cross_grid_predicates.h"
+#include "2025/may/number_cross_grid_predicates.h"
+#include "utils/base.h"
 
 
 template<size_t MaxRegionSize, size_t MaxRegionNeighbors>
@@ -107,67 +108,37 @@ public:
         init_regions_();
     }
 
-    constexpr auto& operator()(int r, int c) noexcept { return digits_[r][c]; }
-    constexpr auto& operator()(int r, int c) const noexcept { return digits_[r][c]; }
+    constexpr uint8_t&       operator()(int r, int c) noexcept { return digits_[r][c]; }
+    constexpr uint8_t const& operator()(int r, int c) const noexcept { return digits_[r][c]; }
 
-    constexpr auto& regions() noexcept { return grid_regions_; }
-    constexpr auto& regions() const noexcept { return grid_regions_; }
+    constexpr std::vector<grid_region>&       regions() noexcept { return grid_regions_; }
+    constexpr std::vector<grid_region> const& regions() const noexcept { return grid_regions_; }
 
-    constexpr auto& region_of(int r, int c) noexcept { return grid_regions_[region_index_[r][c]]; }
-    constexpr auto& region_of(int r, int c) const noexcept { return grid_regions_[region_index_[r][c]]; }
+    constexpr grid_region&       region_of(int r, int c) noexcept { return grid_regions_[region_index_[r][c]]; }
+    constexpr grid_region const& region_of(int r, int c) const noexcept { return grid_regions_[region_index_[r][c]]; }
 
     // clang-format off
     template<size_t Row>
-    constexpr auto& predicate() const noexcept { return std::get<Row>(predicates_); }
+    constexpr auto predicate() const noexcept -> decltype(auto) { return std::get<Row>(predicates_); }
 
     template<size_t Row>
-    constexpr auto row() noexcept { return std::span{digits_[Row]}; }
-    template<size_t Row>
-    constexpr auto row() const noexcept { return std::span{digits_[Row]}; }
+    constexpr std::span<uint8_t const> row() const noexcept { return std::get<Row>(digits_); }
     // clang-format on
 
+    constexpr auto highlighted(int r, int c) const noexcept { return highlighted_[to_idx_(r, c)]; }
+    constexpr auto blocked(int r, int c) noexcept { return blocked_[to_idx_(r, c)]; }
+    constexpr auto blocked(int r, int c) const noexcept { return blocked_[to_idx_(r, c)]; }
 
-    constexpr auto altered(int r, int c) const noexcept
+    constexpr bool altered(int r, int c) const noexcept
     {
         auto const digit = (*this)(r, c);
         return !this->blocked(r, c) && digit != 0 && digit != this->region_of(r, c).get_digit();
     }
 
-    constexpr auto highlighted(int r, int c) const noexcept { return highlighted_[to_idx_(r, c)]; }
+    constexpr std::bitset<10> allowed_digits(int r) const noexcept { return allowed_digits_[r]; }
 
-    constexpr auto blocked(int r, int c) noexcept { return blocked_[to_idx_(r, c)]; }
-    constexpr auto blocked(int r, int c) const noexcept { return blocked_[to_idx_(r, c)]; }
-
-    constexpr auto allowed_digits(int r) const noexcept { return std::bitset<10>{allowed_digits_[r]}; }
-
-    // constexpr auto get_numbers() const noexcept
-    // {
-    //     std::vector<uint64_t> numbers;
-    //     numbers.reserve(N * N / 3);
-
-    //     for(auto const& row: digits_)
-    //     {
-    //         int start = row.front().is_blocked() ? 1 : 0;
-    //         for(int end = start + 1; end <= N; ++end)
-    //         {
-    //             if((end != N && !row[end].is_blocked()) || (end == N && row.back().is_blocked()))
-    //                 continue;
-
-    //             auto const     cells = std::span(row).subspan(start, end - start);
-    //             uint64_t const x     = std::ranges::fold_left(cells, 0ull, [](uint64_t const acc, grid_cell const& c)
-    //                                                           { return 10 * acc + c.get_digit(); });
-
-    //             numbers.push_back(x);
-
-    //             start = end + 1;
-    //         }
-    //     }
-
-    //     return numbers;
-    // }
-
-    constexpr auto& digits_array() const noexcept { return digits_; }
-    constexpr auto& region_index_array() const noexcept { return region_index_; }
+    constexpr std::array<std::array<uint8_t, N>, N> const& digits_array() const noexcept { return digits_; }
+    constexpr std::array<std::array<uint8_t, N>, N> const& region_index_array() const noexcept { return region_index_; }
 
 private:
     template<CRowPredicate... Preds>
@@ -274,7 +245,7 @@ struct fmt::formatter<number_cross_grid<Predicates...>>
     using value_type = number_cross_grid<Predicates...>;
 
     static constexpr size_t N          = sizeof...(Predicates);
-    static constexpr auto   kValidOpts = std::array<char, 6>{{'d', 'r', 'o', 'D', 'R', 'O'}};
+    static constexpr auto   kValidOpts = std::array<char, 6>{{'d', 'r', 'i', 'D', 'R', 'I'}};
 
     constexpr auto parse(format_parse_context& ctx)
     {
@@ -283,7 +254,7 @@ struct fmt::formatter<number_cross_grid<Predicates...>>
 
         if(it != end && std::ranges::contains(kValidOpts, *it))
         {
-            presentation_ = to_lower_mp_[static_cast<unsigned char>(*it)];
+            presentation_ = qs::tolower(*it);
             extra_flags_  = (*it != presentation_);
             it++;
         }
@@ -312,30 +283,25 @@ struct fmt::formatter<number_cross_grid<Predicates...>>
             {
                 switch(presentation_)
                 {
-                    case 'r':
-                        return '0' + grid.region_index_array()[i][j];
-                    case 'o':
-                        return grid.region_of(i, j).get_digit() == 0 ? ' ' : '0' + grid.region_of(i, j).get_digit();
-                    default:
-                        return grid(i, j) == 0 ? ' ' : '0' + grid(i, j);
+                case 'i':
+                    return '0' + grid.region_index_array()[i][j];
+                case 'r':
+                    return grid.region_of(i, j).get_digit() == 0 ? ' ' : '0' + grid.region_of(i, j).get_digit();
+                default:
+                    return grid(i, j) == 0 ? ' ' : '0' + grid(i, j);
                 }
             }();
 
             auto const [ch, flags_ch] = [&]() -> std::pair<char, char>
             {
-                auto const flags = (grid.blocked(i, j) & (presentation_ == 'd')) * 1 + grid.highlighted(i, j) * 2 +
-                                   (grid.altered(i, j) & (presentation_ == 'd')) * 3;
-                switch(flags)
-                {
-                    case 1:
-                        return {blocked_ch, ' '};
-                    case 2:
-                        return {dig_ch, highlighted_ch};
-                    case 3:
-                        return {dig_ch, altered_ch};
-                    default:
-                        return {dig_ch, ' '};
-                }
+                if(grid.blocked(i, j) & (presentation_ == 'd'))
+                    return {blocked_ch, ' '};
+                else if(grid.highlighted(i, j))
+                    return {dig_ch, highlighted_ch};
+                else if((grid.altered(i, j) & (presentation_ == 'd')))
+                    return {dig_ch, altered_ch};
+                else
+                    return {dig_ch, ' '};
             }();
 
             fmt::format_to(ctx.out(), " {}{}"sv, ch, flags_ch);
@@ -384,17 +350,6 @@ struct fmt::formatter<number_cross_grid<Predicates...>>
 private:
     char presentation_ = 'd'; // digit + altered + highlighted
     bool extra_flags_  = true;
-
-    static constexpr auto to_lower_mp_ = []()
-    {
-        std::array<char, 256> table{};
-        for(size_t i = 0; i < 256; ++i)
-        {
-            auto const c = static_cast<unsigned char>(i);
-            table[i]     = (c >= 'A' && c <= 'Z') ? static_cast<char>(c + ('a' - 'A')) : c;
-        }
-        return table;
-    }();
 };
 
 #endif // NUMBER_CROSS_GRID_H

@@ -46,7 +46,7 @@ struct grid_cross_partitions
     static constexpr auto& get(int number) { return cell_partitions_[number]; }
 
 private:
-    static constexpr auto zero_partitions_  = grid_cross_partitions_generator::compute<0>();
+    static constexpr auto zero_partitions_  = std::array<grid_cross_partition, 0>{};
     static constexpr auto one_partitions_   = grid_cross_partitions_generator::compute<1>();
     static constexpr auto two_partitions_   = grid_cross_partitions_generator::compute<2>();
     static constexpr auto three_partitions_ = grid_cross_partitions_generator::compute<3>();

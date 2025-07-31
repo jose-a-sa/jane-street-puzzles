@@ -11,8 +11,8 @@
 #include <tuple>
 #include <unordered_set>
 
-#include "may-2025/number_cross_cell_partitions.h"
-#include "may-2025/number_cross_grid.h"
+#include "2025/may/number_cross_cell_partitions.h"
+#include "2025/may/number_cross_grid.h"
 #include "spdlog/spdlog.h"
 #include "utils/restorer.h"
 
@@ -37,11 +37,11 @@ public:
 
         if(try_region_configuration_())
         {
-            SPDLOG_INFO("FINAL:\n{}", grid_);
+            SPDLOG_INFO("Found solution for grid with N={}:\n{}", N, grid_);
             return true;
         }
 
-        SPDLOG_INFO("No solution found");
+        SPDLOG_INFO("No solution found for grid with N={}", N);
         return false;
     }
 
@@ -78,15 +78,15 @@ public:
 
         if(try_grid_configuration_())
         {
-            SPDLOG_INFO("FINAL:\n{}", grid_);
+            SPDLOG_INFO("Found solution for grid with N={}, region_digits={}:\n{}", N, region_digits, grid_);
             return true;
         }
 
-        SPDLOG_INFO("No solution found");
+        SPDLOG_INFO("No solution found for grid with N={}, region_digits={}", N, region_digits);
         return false;
     }
 
-    auto& get_unique_numbers() const noexcept { return unique_numbers_; }
+    constexpr std::unordered_set<int64_t> const& get_unique_numbers() const noexcept { return unique_numbers_; }
 
 private:
     grid_type&                  grid_;
@@ -98,7 +98,7 @@ private:
         {
             auto const region_config =
                 std::views::transform(grid_.regions(), [](auto const& reg) { return reg.get_digit(); });
-            SPDLOG_DEBUG("Trying region configuration: {}", region_config);
+            SPDLOG_INFO("Trying region configuration: {}", region_config);
 
             if(try_grid_configuration_())
             {
@@ -163,7 +163,7 @@ private:
         end_col = std::min(end_col, static_cast<int>(N));
         // pre-condition
         if(!(end_col == N || (end_col > 0 && end_col < N - 1 && grid_.blocked(Row, end_col))))
-            return {};
+            return std::nullopt;
 
         if(end_col == N && grid_.blocked(Row, N - 1))
             --end_col;
@@ -174,20 +174,6 @@ private:
 
         auto const cell_row = std::span<uint8_t const>(grid_.template row<Row>());
         return cell_row.subspan(start_col, end_col - start_col);
-    }
-
-    template<size_t Row>
-    constexpr auto validate_number_(std::span<uint8_t const> const& digits) const noexcept -> std::tuple<bool, int64_t>
-    {
-        auto const& predicate = grid_.template predicate<Row>();
-
-        auto const x = std::ranges::fold_left(digits, int64_t{}, [](auto acc, auto c) { return 10 * acc + c; });
-
-        bool const predicate_satisfied = predicate.check(x, digits);
-        SPDLOG_DEBUG("validate_previous_number_<Row={}>(end_col={}) Previous number {}={} is {}", Row, end_col, cells,
-                     x, predicate_satisfied ? "SATISFIED" : "INVALID");
-
-        return {predicate_satisfied, x};
     }
 
     template<size_t Row = 0>
@@ -208,7 +194,8 @@ private:
             auto const prev_number = get_previous_number_digits_<Row - 1>(col);
             if(prev_number.has_value())
             {
-                auto const [is_valid, x] = validate_number_<Row - 1>(prev_number.value());
+                auto const& predicate    = grid_.template predicate<Row - 1>();
+                auto const [is_valid, x] = predicate(prev_number.value());
                 if(!is_valid)
                     return false;
 
@@ -247,7 +234,8 @@ private:
                 auto const prev_number = get_previous_number_digits_<N - 1>(col);
                 if(prev_number.has_value())
                 {
-                    auto const [is_valid, x] = validate_number_<N - 1>(prev_number.value());
+                    auto const& predicate    = grid_.template predicate<N - 1>();
+                    auto const [is_valid, x] = predicate(prev_number.value());
 
                     if(!is_valid)
                         return false;
@@ -358,7 +346,7 @@ private:
     constexpr bool is_valid_partition_(int const col, grid_cross_partition const& part) const noexcept
     {
         auto is_valid_sum = [&](int r, int c, int const val)
-        { return (val == 0 || (!grid_.highlighted(r, c) && !grid_.blocked(r, c))) && (grid_(r, c) + val < 10); };
+        { return (val == 0 || !(grid_.highlighted(r, c) || grid_.blocked(r, c))) && (grid_(r, c) + val < 10); };
 
         if constexpr(Row == 0)
         {

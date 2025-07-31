@@ -52,7 +52,7 @@ IncludeCategories:
     Priority: 3
 IncludeIsMainRegex: "([-_](test|unittest))?$"
 IndentCaseBlocks: true
-IndentCaseLabels: true
+IndentCaseLabels: false
 InsertNewlineAtEOF: true
 MacroBlockBegin: ""
 MacroBlockEnd: ""
