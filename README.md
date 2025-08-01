@@ -3,8 +3,8 @@
 ## Description
 
 This repository contains solutions to Jane Street's monthly puzzles, with focus of use of modern C++ for computational solutions.
-No external SAT solver libraries (such as Z3) are used in this repository, with emphasis of coming up with the fastest solution as possible by thinking around the puzzle (e.g. finding the earliest exits during backtracking).
-Some solutions are much faster than using SAT solvers (<1ms). Sometimes, puzzles when SAT solver would be perfect use case might be considerably slower.
+No external SAT/SMT solver libraries (such as Z3) are used in this repository, with emphasis of coming up with the fastest solution as possible by thinking around the puzzle (e.g. finding the earliest exits during backtracking).
+Some solutions are much faster than using SAT/SMT solvers (<1ms). Sometimes, puzzles when SAT/SMT solver would be perfect use case might be considerably slower.
 All logic and search are coded from scratch for transparency and reproducibility.
 
 ## Puzzles summary
