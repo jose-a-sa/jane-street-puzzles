@@ -56,7 +56,7 @@ This can be divided into 3 subcases:
 
 Combining, lost distance from a single 2 car interaction is:
 
-$$ \ell(v,u) = \frac{u^2}{\beta} \mathbf{1}\_{v < a} + \frac{(u-a)^2}{\beta} \mathbf{1}\_{v < a}  $$
+$$ \ell(v,u) = \frac{u^2}{\beta} \mathbf{1}\_{v < a} + \frac{(u-a)^2}{\beta} \mathbf{1}\_{u > a}  $$
 
 
 ### 3. Density of interactions
