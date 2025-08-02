@@ -38,7 +38,9 @@ Because $C_{2}(q_1, q_2; W, z, N, a)$ is still tricky to compute for bounded cas
 ### 2. Lost distance of a single 2-car interaction
 
 To compute the lost distance we can switch from random variables $v_1, v_2 \sim U(1,2)$, to fast/slow car speeds
+
 $$v = \max(v_1, v_2) \qquad u = \min(v_1, v_2)$$
+
 where the probability density is $f(v,u) = 2 \cdot \mathbf{1}_{u < v}$.
 
 The lost distance in a 2 car interaction will depend whether cars are in the fast/slow lanes. Acceleration is constant at $\beta=1$ miles-per-second-per-second.
