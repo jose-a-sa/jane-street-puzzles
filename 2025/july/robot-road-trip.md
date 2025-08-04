@@ -19,7 +19,7 @@ $$ \lim_{N\to\infty} \left[ \lim_{z \to 0^{+}} f(z,N) \right] $$
 
 ### 1. Main argument
 
-As the spanning rate tends to zero ($z \to 0^{+}$), the level of interations diminishes as trip beginnings form a Poisson process of density $z$ (starts per mile-minute). Effectively, assuming that we have a bounded space-time rectangle region
+As the spanning rate tends to zero ($z \to 0^{+}$), the level of interactions diminishes as trip beginnings form a Poisson process of density $z$ (starts per mile-minute). Effectively, assuming that we have a bounded space-time rectangle region
 $W = [-T,T] \times [-L,L]$, then the probability of finding the trip starting in a subregion $V \subseteq W$ is given by $z |V|$.
 Formally speaking, the lost distance (cost) $C_W(z, N, a)$ for trips in the rectangle $W$ is given by:
 
@@ -27,7 +27,7 @@ $$ C(W, z, N, a) = \sum_{k \ge 0} e^{-z|W|} \frac{(z |W|)^k}{k!} \int_{(W \times
 
 where $q_i=(t_i, x_i, v_i)$ is a triplet for the trip start time, position and velocity, for car $i$.
 
-The expected lost distance in the case of $k$ cars spanning $C_{k}(\set{q_i}_{i \le k}; W, z, N, a)$, especially for a bounded region, is a complicated piecewise in which we need to consider positions being in-bounds and consider higher-order interations.
+The expected lost distance in the case of $k$ cars spanning $C_{k}(\set{q_i}_{i \le k}; W, z, N, a)$, especially for a bounded region, is a complicated piecewise in which we need to consider positions being in-bounds and consider higher-order interactions.
 For e.g., for a finite travelled length $N$, when 2 cars interact the slower of the 2 will travel longer and may allow a 3rd car to catch up to it in certain cases where it would never interact.
 
 The important fact here is that $k$ cars will contribute with $z^k$. Therefore, as $z\to0^{+}$ interactions will become more and more sparse, and the lost distance will be dominated by $C_{2}(q_1, q_2; W, z, N, a)$, since there are no interactions for no cars or a single car
@@ -65,9 +65,9 @@ $$ \ell(v,u) = \frac{u^2}{\beta} \mathbf{1}\_{v < a} + \frac{(u-a)^2}{\beta} \ma
 
 ### 3. Density of interactions
 
-We need to compute the rate of interations for 2 cars only, assuming that they happen infinity sparsesly separated (so it only affects the travelled time/distance once).
+We need to compute the rate of interactions for 2 cars only, assuming that they happen infinitely sparsely separated (so it only affects the travelled time/distance once).
 Take the space-time region to be the full 2d-plane and imagine two cars spans with starting coordinates/velocity $(t_1, x_1, v_1)$, $(t_2, x_2, v_2)$.
-Using tarnslation symmetry we can set $(t_1, x_1) = (0,0)$ and $(t_2, x_2) = (\Delta t, \Delta x)$. We can assume, wlog, that the slower car is the one at origin.
+Using translation symmetry we can set $(t_1, x_1) = (0,0)$ and $(t_2, x_2) = (\Delta t, \Delta x)$. We can assume, *wlog*, that the slower car is the one at origin.
 Therefore, in order to interact, the cars trajectories must intersect at $(t^{\*}, x^{\*})$:
 
 $$ x^{\*} = u t^{\*} \quad,\quad x^{\*} = \Delta_{x} + v (t^{\*} - \Delta_{t}) \qquad\implies\qquad t^{\*} = \frac{- \Delta_{x} + v \Delta_{t} }{v - u} $$
@@ -78,7 +78,7 @@ This implied that the offset distance/time between cars must be in
 $$ \mathcal{R} = \left\lbrace (\Delta_{t}, \Delta_{x}) \middle\rvert : 0 < - \Delta_{x} + v \Delta_{t} < (v - u) \frac{N}{u} ~,~ 0 < - \Delta_{x} + u \Delta_{t} < (v - u) \frac{N}{v} \right\rbrace $$
 
 The average number of cars are able to start in the region $\mathcal{R}$ to be able to intersect the car starting at $(t,x) = (0,0)$ is simply $z | \mathcal{R} |$. 
-The rate of interactions per-mine-minute is obtained by multiplying by an extra $z$,
+The rate of interactions per-mile-minute is obtained by multiplying by an extra $z$,
 
 $$ z^2 |R| = z^2 \left[ (v- u) \frac{N}{u} \right] \left[ (v - u) \frac{N}{v} \right] / \left| \det\left(\begin{matrix} v & -1 \\\ u & -1 \end{matrix} \right) \right| = z^2 N^2 \frac{(v - u)}{u v} $$
 
@@ -91,7 +91,7 @@ This can be normalized in $[1,2]^2$ but since we are optimizing for $a$, the add
 **Note:** If $v=u$ we do not have interactions as expected. 
 One would expect that rate of interaction would be modelled by the relative velocity $(v - u)$. 
 This would be the case if the cars travelled for the same amount of time before exiting the highway. 
-Instead, because the cars tavel the **same distance $N$**, the rate is proportional to $\left(\frac{1}{u} - \frac{1}{v}\right)$. 
+Instead, because the cars travel the **same distance $N$**, the rate is proportional to $\left(\frac{1}{u} - \frac{1}{v}\right)$. 
 This behavior is still maintained as $N \to \infty$.
 
 

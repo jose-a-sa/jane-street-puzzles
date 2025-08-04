@@ -2,7 +2,7 @@
 
 ## Description
 
-![](mirrors_3.png)
+![](mirrors-3.png)
 
 The perimeter of a 10-by-10 square field is surrounded by lasers pointing into the field. (Each laser begins half a unit from the edge of the field, as indicated by the •’s.)
 

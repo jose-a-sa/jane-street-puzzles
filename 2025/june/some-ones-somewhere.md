@@ -6,24 +6,24 @@ The answer to this month’s puzzle – which can be seen [here](june-2025-puzzl
 
 ## Approach
 
-The program uses a simple backtrack algorithm with to find the solution.
+The program uses a simple backtrack algorithm to find the solution.
 
-A simple optimization was to check that the if a large tile cannot be placed is too close to the grid border otherwise where are not enough smaller squares that can fill the gap.
+An optimization was to check if a large tile cannot be placed too close to the grid border; otherwise, there are not enough smaller squares to fill the gap.
 E.g: if we set a 9×9 tile with a right gap of $\delta = 2$ (assume no squares), it means we have a 2×9 rectangular gap that cannot be filled with the two 2-tiles and 1-tile.
 On the other hand, if the gap is $\delta = 3$ we can use three 3-tiles to fill the 3×9 gap.
 This can be formalized as follows: let $\delta$ be the gap (in any direction) and $s$ the side of the square, then this translates to $\delta \ge 1$ and $\delta^2 < s$.
-This however fails for $s \ge 17$ (or $\delta > 3$), where we can fill the a 4×17 rectangular gap with four 4-squares and two 2-squares.
+This however fails for $s \ge 17$ (or $\delta > 3$), where we can fill a 4×17 rectangular gap with four 4-squares and two 2-squares.
 So we can prune any configuration if
 $$1 \le \delta \le 3 \qquad \delta^2 < s$$
 where $s$ is the side of the placed square with any directional padding $\delta$.
 
 Quite certainly more early pruning can be done to improve performance.
 
-> **Note:** this problem in particular can be solver in faster runtime with solvers like Z3, but I purposefully try a solution without any external solvers.
+> **Note:** this problem in particular can be solved in faster runtime with solvers like Z3, but I purposefully tried a solution without any external solvers.
 
 ## Solution
 
-By solving each 45×45 partridge tiling grids, we group the positions for positions for the unique 1×1 squares in the tiling. These point to positions of letters in the tiling borders which can be completed by using the cycled alphabet, i.e. each row/column will have the letters if they match index:
+By solving each 45×45 partridge tiling grid, we group the positions for the unique 1×1 squares in the tiling. These point to positions of letters in the tiling borders which can be completed by using the cycled alphabet, i.e. each row/column will have the letters if they match index:
 
 0. `ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRS`
 1. `TUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKL`
