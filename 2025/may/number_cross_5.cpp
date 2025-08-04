@@ -36,7 +36,7 @@ int main(int argc, char** argv)
     spdlog::info("Starting number-cross-5");
 
     // clang-format off
-    constexpr auto preds5 = std::make_tuple(
+    constexpr CTupleRowPredicates auto preds5 = std::make_tuple(
         is_multiple_of<11>{},
         is_multiple_of<14>{},
         is_multiple_of<28>{},
@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 
 
     // clang-format off
-    constexpr auto preds11 = std::make_tuple(
+    constexpr CTupleRowPredicates auto preds11 = std::make_tuple(
         is_perfect_square{},
         product_of_digits_matches<20>{},
         is_multiple_of<13>{},

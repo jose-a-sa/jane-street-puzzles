@@ -10,6 +10,7 @@
 #include <span>
 
 #include <fmt/core.h>
+#include <tuple>
 
 #include "utils/base.h"
 
@@ -18,6 +19,15 @@ template<class Pred>
 concept CRowPredicate = requires(Pred pred, std::span<uint8_t const> digits) {
     { pred(digits) } -> std::same_as<std::tuple<bool, int64_t>>;
     { pred.allowed_digits() } -> std::same_as<std::bitset<10>>;
+};
+
+template<class Tuple>
+concept CTupleRowPredicates = requires {
+    typename std::tuple_size<Tuple>::type; // Must be a tuple
+
+    requires([]<size_t... I>(std::index_sequence<I...>)
+             { return (CRowPredicate<std::tuple_element_t<I, Tuple>> && ...); })(
+        std::make_index_sequence<std::tuple_size_v<Tuple>>{});
 };
 
 

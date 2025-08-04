@@ -123,7 +123,7 @@ static void init_logging(char const (&log_file)[N])
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     console_sink->set_level(spdlog::level::info);
 
-    auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{file_sink, console_sink});
+    auto logger = std::make_shared<spdlog::logger>("", spdlog::sinks_init_list{file_sink});
     spdlog::set_default_logger(logger);
 
     auto formatter = std::make_unique<spdlog::pattern_formatter>();

@@ -41,7 +41,9 @@ To compute the lost distance we can switch from random variables $v_1, v_2 \sim 
 
 $$v = \max(v_1, v_2) \qquad u = \min(v_1, v_2)$$
 
-where the probability density is $f(v,u) = 2 \cdot \mathbf{1}_{u < v}$.
+where the probability density is
+
+$$f(v,u) = 2 \cdot \mathbf{1}_{u < v}$$
 
 The lost distance in a 2 car interaction will depend whether cars are in the fast/slow lanes. Acceleration is constant at $\beta=1$ miles-per-second-per-second.
 This can be divided into 3 subcases:
@@ -75,13 +77,14 @@ This implied that the offset distance/time between cars must be in
 
 $$ \mathcal{R} = \left\lbrace (\Delta_{t}, \Delta_{x}) \middle\rvert : 0 < - \Delta_{x} + v \Delta_{t} < (v - u) \frac{N}{u} ~,~ 0 < - \Delta_{x} + u \Delta_{t} < (v - u) \frac{N}{v} \right\rbrace $$
 
-The rate at which cars are able to start in the region $\mathcal{R}$ to be able to intersect the car starting at $(t,x) = (0,0)$ is simply $z | \mathcal{R} |$, which is equivalent to
+The average number of cars are able to start in the region $\mathcal{R}$ to be able to intersect the car starting at $(t,x) = (0,0)$ is simply $z | \mathcal{R} |$. 
+The rate of interactions per-mine-minute is obtained by multiplying by an extra $z$,
 
-$$ z |R| = z \left[ (v- u) \frac{N}{u} \right] \left[ (v - u) \frac{N}{v} \right] / \left| \det\left(\begin{matrix} v & -1 \\\ u & -1 \end{matrix} \right) \right| = z N^2 \frac{(v - u)}{u v} $$
+$$ z^2 |R| = z^2 \left[ (v- u) \frac{N}{u} \right] \left[ (v - u) \frac{N}{v} \right] / \left| \det\left(\begin{matrix} v & -1 \\\ u & -1 \end{matrix} \right) \right| = z^2 N^2 \frac{(v - u)}{u v} $$
 
 The rate of interaction is therefore, proportional to
 
-$$\rho(v, u) \propto 2 z N^2 \frac{(v - u)}{u v} \mathbf{1}_{u < v} $$
+$$\rho(v, u) \propto 2 z^2 N^2 \frac{(v - u)}{u v} \mathbf{1}_{u < v} $$
 
 This can be normalized in $[1,2]^2$ but since we are optimizing for $a$, the additional constant is not relevant.
 
